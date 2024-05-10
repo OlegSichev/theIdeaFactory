@@ -6,6 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+
+import java.util.List;
 
 @Controller
 public class theIdeaFactoryController {
@@ -24,4 +28,11 @@ public class theIdeaFactoryController {
         theIdeaFactoryService.save(theIdeaFactoryEntity);
         return "redirect:/theIdeaFactoryIndex";
     }
+
+    @GetMapping("/getEntriesFromDatabase")
+    @ResponseBody
+    public List<theIdeaFactoryEntity> getEntriesFromDatabase() {
+        return theIdeaFactoryService.findAll(); // метод findAll() должен возвращать данные из базы данных
+    }
+
 }

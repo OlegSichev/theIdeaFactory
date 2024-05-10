@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html>
 <head>
   <title>Фабрика идей</title>
   <style>
@@ -24,7 +24,7 @@
     }
 
     .title {
-      text-align: center; /* Центрирование текста заголовка */
+      text-align: center;
       color: #333;
       margin-bottom: 20px;
     }
@@ -53,23 +53,8 @@
       padding: 10px;
     }
 
-    .entry:not(:first-of-type) {
-      border-top: 1px solid #ccc;
-    }
-
-    /* New styles added for the input, textarea and button in the HTML code */
-    input.input-field,
-    textarea.input-field,
-    button.submit-btn {
-      width: calc(100% - 20px);
-      padding: 10px;
-      margin-bottom: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-
-    button.submit-btn {
-      width: 100%;
+    .entry:not(:last-of-type) {
+      border-bottom: 1px solid #ccc;
     }
   </style>
 </head>
@@ -80,12 +65,45 @@
   <textarea class="input-field" name="message" placeholder="Ваше предложение"></textarea>
   <button class="submit-btn" type="submit">Отправить предложение</button>
 </form>
-<div th:each="entry : ${entries}" class="entry">
-  <div>
-    <h3 th:text="${entry.username}">Name</h3>
-    <p th:text="${entry.message}">Message</p>
-    <p th:text="${#dates.format(entry.postedDate, 'dd-MM-yyyy HH:mm:ss')}">Date</p>
-  </div>
-</div>
+
+<div id="entriesContainer"></div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "/getEntriesFromDatabase", true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        var entries = JSON.parse(xhr.responseText);
+        var entriesContainer = document.getElementById('entriesContainer');
+        entries.reverse(); // Reverse the order of entries to display newest at the top
+
+        entries.forEach(function(entry) {
+          var entryDiv = document.createElement('div');
+          entryDiv.setAttribute('class', 'entry');
+
+          var nameHeading = document.createElement('h3');
+          nameHeading.textContent = entry.username;
+
+          var messageParagraph = document.createElement('p');
+          messageParagraph.textContent = entry.message;
+
+          var dateParagraph = document.createElement('p');
+          var date = new Date(entry.postedDate);
+          var formattedDate = date.toLocaleString(); // Convert date to local date and time format
+          dateParagraph.textContent = formattedDate;
+
+          entryDiv.appendChild(nameHeading);
+          entryDiv.appendChild(messageParagraph);
+          entryDiv.appendChild(dateParagraph);
+
+          entriesContainer.appendChild(entryDiv);
+        });
+      }
+    }
+    xhr.send();
+  });
+</script>
+
 </body>
 </html>
