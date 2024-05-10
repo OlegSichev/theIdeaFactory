@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Фабрика идей</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center; /* Центрирование текста заголовка */
+    }
+
+    .title {
+      text-align: center; /* Центрирование текста заголовка */
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .input-field {
+      width: calc(100% - 20px);
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 10px;
+      background-color: blue; /* Синий цвет кнопки "Post" */
+      border: none;
+      border-radius: 5px;
+      color: #fff; /* Белый цвет текста кнопки "Post" */
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .entry {
+      border-top: 1px solid #ccc;
+      padding: 10px;
+    }
+
+    .entry:not(:first-of-type) {
+      border-top: 1px solid #ccc;
+    }
+
+    /* New styles added for the input, textarea and button in the HTML code */
+    input.input-field,
+    textarea.input-field,
+    button.submit-btn {
+      width: calc(100% - 20px);
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button.submit-btn {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+<h2>Фабрика идей</h2>
+<form th:action="@{/theIdeaFactoryIndex}" method="post">
+  <input class="input-field" type="text" name="username" placeholder="Ваше имя"/>
+  <textarea class="input-field" name="message" placeholder="Ваше предложение"></textarea>
+  <button class="submit-btn" type="submit">Отправить предложение</button>
+</form>
+<div th:each="entry : ${entries}" class="entry">
+  <div>
+    <h3 th:text="${entry.username}">Name</h3>
+    <p th:text="${entry.message}">Message</p>
+    <p th:text="${#dates.format(entry.postedDate, 'dd-MM-yyyy HH:mm:ss')}">Date</p>
+  </div>
+</div>
+</body>
+</html>
