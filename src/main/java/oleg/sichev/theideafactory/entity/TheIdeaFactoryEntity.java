@@ -7,7 +7,7 @@ import java.util.Date;
 
 @Entity
 @Table(name = "entries")
-public class theIdeaFactoryEntity {
+public class TheIdeaFactoryEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -1,109 +1,166 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Фабрика идей</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      margin: 0;
-      padding: 0;
-    }
+    <title>Фабрика идей</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
 
-    .container {
-      width: 100%;
-      max-width: 600px;
-      margin: 20px auto;
-      background: #fff;
-      padding: 20px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
 
-    h2 {
-      text-align: center; /* Центрирование текста заголовка */
-    }
+        h2 {
+            text-align: center;
+        }
 
-    .title {
-      text-align: center;
-      color: #333;
-      margin-bottom: 20px;
-    }
+        .title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
 
-    .input-field {
-      width: calc(100% - 20px);
-      padding: 10px;
-      margin-bottom: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
+        .input-field {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
 
-    .submit-btn {
-      width: 100%;
-      padding: 10px;
-      background-color: blue; /* Синий цвет кнопки "Post" */
-      border: none;
-      border-radius: 5px;
-      color: #fff; /* Белый цвет текста кнопки "Post" */
-      font-weight: bold;
-      cursor: pointer;
-    }
+        .submit-btn, .logout-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: blue;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
 
-    .entry {
-      border-top: 1px solid #ccc;
-      padding: 10px;
-    }
+        .logout-btn {
+            background-color: red;
+        }
 
-    .entry:not(:last-of-type) {
-      border-bottom: 1px solid #ccc;
-    }
-  </style>
+        .entry {
+            border-top: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        .entry:not(:last-of-type) {
+            border-bottom: 1px solid #ccc;
+        }
+
+        .menu {
+            width: 200px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: #ddd;
+            padding: 20px;
+        }
+
+        .menu a, .menu button {
+            display: block;
+            margin-bottom: 10px;
+            width: 100%;
+            padding: 10px;
+            text-decoration: none;
+            color: #333;
+            background: #bbb;
+            border: none;
+            text-align: left;
+        }
+    </style>
 </head>
 <body>
-<h2>Фабрика идей</h2>
-<form th:action="@{/theIdeaFactoryIndex}" method="post">
-  <input class="input-field" type="text" name="username" placeholder="Ваше имя"/>
-  <textarea class="input-field" name="message" placeholder="Ваше предложение"></textarea>
-  <button class="submit-btn" type="submit">Отправить предложение</button>
-</form>
+<div class="menu">
+    <button onclick="location.href='/'">Главная страница</button>
+    <button disabled>Блог</button>
+    <button class="logout-btn" onclick="location.href='/logout'">Выход</button>
+</div>
 
-<div id="entriesContainer"></div>
+<div class="container">
+    <h2>Фабрика идей</h2>
+    <div id="username" class="title"></div>
+    <form th:action="@{/theIdeaFactoryIndex}" method="post">
+        <textarea class="input-field" name="message" placeholder="Ваше предложение"></textarea>
+        <label><input type="checkbox" id="anonymousCheckbox"> Анонимно</label>
+        <button class="submit-btn" type="submit">Отправить предложение</button>
+    </form>
+
+    <div id="entriesContainer"></div>
+</div>
 
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "/getEntriesFromDatabase", true);
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState === 4 && xhr.status === 200) {
-        var entries = JSON.parse(xhr.responseText);
-        var entriesContainer = document.getElementById('entriesContainer');
-        entries.reverse(); // Reverse the order of entries to display newest at the top
+    document.addEventListener("DOMContentLoaded", function() {
+        var xhrUser = new XMLHttpRequest();
+        xhrUser.open("GET", "/username", true);
+        xhrUser.onreadystatechange = function() {
+            if (xhrUser.readyState === 4 && xhrUser.status === 200) {
+                var username = xhrUser.responseText.trim();
+                var usernameField = document.getElementById('username');
+                if (username) {
+                    usernameField.innerHTML = '<strong>Ваше имя:</strong> ' + username;
+                    document.querySelector("form").addEventListener("submit", function(e) {
+                        var inputField = document.createElement('input');
+                        inputField.type = 'hidden';
+                        inputField.name = 'username';
+                        inputField.value = username;
+                        this.appendChild(inputField);
+                    });
+                } else {
+                    usernameField.innerHTML = '<strong>Пользователь:</strong> Гость';
+                }
+            }
+        };
+        xhrUser.send();
 
-        entries.forEach(function(entry) {
-          var entryDiv = document.createElement('div');
-          entryDiv.setAttribute('class', 'entry');
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/getEntriesFromDatabase", true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                var entries = JSON.parse(xhr.responseText);
+                var entriesContainer = document.getElementById('entriesContainer');
+                entries.reverse();
 
-          var nameHeading = document.createElement('h3');
-          nameHeading.textContent = entry.username;
+                entries.forEach(function(entry) {
+                    var entryDiv = document.createElement('div');
+                    entryDiv.setAttribute('class', 'entry');
 
-          var messageParagraph = document.createElement('p');
-          messageParagraph.textContent = entry.message;
+                    var nameHeading = document.createElement('h3');
+                    nameHeading.textContent = entry.username;
 
-          var dateParagraph = document.createElement('p');
-          var date = new Date(entry.postedDate);
-          var formattedDate = date.toLocaleString(); // Convert date to local date and time format
-          dateParagraph.textContent = formattedDate;
+                    var messageParagraph = document.createElement('p');
+                    messageParagraph.textContent = entry.message;
 
-          entryDiv.appendChild(nameHeading);
-          entryDiv.appendChild(messageParagraph);
-          entryDiv.appendChild(dateParagraph);
+                    var dateParagraph = document.createElement('p');
+                    var date = new Date(entry.postedDate);
+                    var formattedDate = date.toLocaleString();
+                    dateParagraph.textContent = formattedDate;
 
-          entriesContainer.appendChild(entryDiv);
-        });
-      }
-    }
-    xhr.send();
-  });
+                    entryDiv.appendChild(nameHeading);
+                    entryDiv.appendChild(messageParagraph);
+
+                    entriesContainer.appendChild(entryDiv);
+                });
+            }
+        }
+        xhr.send();
+    });
 </script>
-
 </body>
 </html>
