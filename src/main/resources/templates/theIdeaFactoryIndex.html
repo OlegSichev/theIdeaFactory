@@ -96,11 +96,19 @@
 <div class="container">
     <h2>Фабрика идей</h2>
     <div id="username" class="title"></div>
-    <form th:action="@{/theIdeaFactoryIndex}" method="post">
+    <form th:action="@{/theIdeaFactoryIndex}" method="post" enctype="multipart/form-data">
         <textarea class="input-field" name="message" placeholder="Ваше предложение"></textarea>
         <label><input type="checkbox" id="anonymousCheckbox"> Анонимно</label>
+        <br>
+        <br>
+        <!-- Поле для загрузки файла -->
+        <label for="fileUpload">Прикрепить файл:</label>
+        <input type="file" id="fileUpload" name="fileUpload">
+        <br>
+        <br>
         <button class="submit-btn" type="submit">Отправить предложение</button>
     </form>
+
 
     <div id="entriesContainer"></div>
 </div>
