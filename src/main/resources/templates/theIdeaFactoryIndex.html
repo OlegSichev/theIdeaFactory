@@ -17,10 +17,12 @@
             background: #fff;
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
         }
 
         h2 {
             text-align: center;
+            color: #444;
         }
 
         .title {
@@ -38,10 +40,11 @@
             border-radius: 5px;
         }
 
-        .submit-btn, .logout-btn {
+        .submit-btn,
+        .logout-btn {
             width: 100%;
             padding: 10px;
-            background-color: blue;
+            background-color: #007bff; /* Изменение цвета для кнопки "Отправить предложение" */
             border: none;
             border-radius: 5px;
             color: #fff;
@@ -54,13 +57,30 @@
             background-color: red;
         }
 
+        .update-btn {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #28a745;
+        }
+
         .entry {
             border-top: 1px solid #ccc;
             padding: 10px;
         }
 
-        .entry:not(:last-of-type) {
-            border-bottom: 1px solid #ccc;
+        .message {
+            display: none; /* Скрываем элемент по умолчанию */
+            padding: 15px;
+            background-color: #e0f7fa;
+            border: 1px solid #4caf50;
+            border-radius: 5px;
+            margin-top: 20px;
         }
 
         .menu {
@@ -71,32 +91,67 @@
             height: 100%;
             background: #ddd;
             padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
         }
 
-        .menu a, .menu button {
+        .menu button {
             display: block;
             margin-bottom: 10px;
             width: 100%;
             padding: 10px;
-            text-decoration: none;
-            color: #333;
-            background: #bbb;
+            color: #fff;
+            background: #6c757d;
             border: none;
             text-align: left;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .menu button.logout-btn {
+            background: #dc3545;
+            /*background-color: red;*/
+            /*color: #fff;*/
+        }
+
+        .footer {
+            text-align: center;
+            padding: 10px 0;
+            color: #666;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        .posts {
+            margin-top: 20px;
+        }
+
+        .post {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .post-time {
+            font-size: 12px;
+            color: #666;
         }
     </style>
 </head>
 <body>
+
 <div class="menu">
     <button onclick="location.href='/'">Главная страница</button>
     <button disabled>Блог</button>
+    <button class="admin-btn" onclick="location.href='/theIdeaFactoryIndexAdmin'">Администрирование</button>
     <button class="logout-btn" onclick="location.href='/logout'">Выход</button>
 </div>
 
 <div class="container">
     <h2>Фабрика идей</h2>
     <div id="username" class="title"></div>
-    <form th:action="@{/theIdeaFactoryIndex}" method="post" enctype="multipart/form-data">
+    <form id="ideaForm" th:action="@{/theIdeaFactoryIndex}" method="post" enctype="multipart/form-data">
         <textarea class="input-field" name="message" placeholder="Ваше предложение"></textarea>
         <label><input type="checkbox" id="anonymousCheckbox"> Анонимно</label>
         <br>
@@ -106,68 +161,120 @@
         <input type="file" id="fileUpload" name="fileUpload">
         <br>
         <br>
+        <button class="update-btn" type="button" onclick="location.reload();">Обновить</button>
         <button class="submit-btn" type="submit">Отправить предложение</button>
     </form>
 
-
-    <div id="entriesContainer"></div>
+    <div id="entriesContainer2" style="display: none;"></div> <!-- Для сообщения благодарности -->
+    <div id="entriesContainer"></div> <!-- Для списка постов -->
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
+        var currentUser = null; // При выполнении скрипта, имя пользователя сохраняется в это поле
+
         var xhrUser = new XMLHttpRequest();
         xhrUser.open("GET", "/username", true);
-        xhrUser.onreadystatechange = function() {
+        xhrUser.onreadystatechange = function () {
             if (xhrUser.readyState === 4 && xhrUser.status === 200) {
-                var username = xhrUser.responseText.trim();
+                currentUser = xhrUser.responseText.trim(); // Получаем имя пользователя
                 var usernameField = document.getElementById('username');
-                if (username) {
-                    usernameField.innerHTML = '<strong>Ваше имя:</strong> ' + username;
-                    document.querySelector("form").addEventListener("submit", function(e) {
+                if (currentUser) {
+                    usernameField.innerHTML = '<strong>Ваше имя:</strong> ' + currentUser;
+                    document.querySelector("form").addEventListener("submit", function (e) {
                         var inputField = document.createElement('input');
                         inputField.type = 'hidden';
                         inputField.name = 'username';
-                        inputField.value = username;
+                        inputField.value = currentUser;
                         this.appendChild(inputField);
                     });
                 } else {
                     usernameField.innerHTML = '<strong>Пользователь:</strong> Гость';
                 }
+
+                // Fetch and display posts after the user is identified
+                answerForUser();
+                fetchPosts();
             }
         };
         xhrUser.send();
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/getEntriesFromDatabase", true);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                var entries = JSON.parse(xhr.responseText);
-                var entriesContainer = document.getElementById('entriesContainer');
-                entries.reverse();
+        function answerForUser() {
+            var form = document.getElementById("ideaForm");
+            var entriesContainer2 = document.getElementById("entriesContainer2");
 
-                entries.forEach(function(entry) {
-                    var entryDiv = document.createElement('div');
-                    entryDiv.setAttribute('class', 'entry');
+            // Обработчик события для отправки формы
+            form.addEventListener("submit", function (event) {
+                event.preventDefault(); // Предотвращаем стандартное поведение формы
 
-                    var nameHeading = document.createElement('h3');
-                    nameHeading.textContent = entry.username;
+                var message = document.querySelector("textarea[name='message']").value;
+                var anonymousCheckbox = document.getElementById("anonymousCheckbox");
+                var isAnonymous = anonymousCheckbox.checked;
 
-                    var messageParagraph = document.createElement('p');
-                    messageParagraph.textContent = entry.message;
+                // Генерируем сообщение благодарности в зависимости от того, анонимно или нет отправляется предложение
+                let thankYouMessage;
+                if (isAnonymous) {
+                    thankYouMessage = "Спасибо! Ваше предложение отправлено анонимно!";
+                } else {
+                    thankYouMessage = `Спасибо, ${document.getElementById('username').textContent.split(': ').pop()}! Ваше предложение отправлено!`;
+                }
 
-                    var dateParagraph = document.createElement('p');
-                    var date = new Date(entry.postedDate);
-                    var formattedDate = date.toLocaleString();
-                    dateParagraph.textContent = formattedDate;
+                var formData = new FormData(form);
 
-                    entryDiv.appendChild(nameHeading);
-                    entryDiv.appendChild(messageParagraph);
-
-                    entriesContainer.appendChild(entryDiv);
-                });
-            }
+                // Отправляем данные формы на сервер
+                fetch(form.action, {
+                    method: "POST",
+                    body: formData,
+                })
+                    .then(response => response.ok ? response.text() : Promise.reject('Ошибка при отправке формы'))
+                    .then(result => {
+                        entriesContainer2.style.display = 'block'; // Показываем контейнер с сообщением
+                        entriesContainer2.textContent = thankYouMessage;
+                        form.reset(); // Сбрасываем форму после отправки
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                        alert('Произошла ошибка при отправке предложения. Попробуйте еще раз.');
+                    });
+            });
         }
-        xhr.send();
+
+        function fetchPosts() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/getEntriesFromDatabase", true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var entries = JSON.parse(xhr.responseText);
+                    var entriesContainer = document.getElementById('entriesContainer'); // Контейнер с постами. В нем посты фильтруются, собираются и отображаются
+                    entries.reverse(); // Переворачиваем, чтобы последние посты были первыми
+
+                    entries.forEach(function (entry) {
+                        if (entry.username === currentUser) { // Фильтрация по текущему пользователю
+                            var entryDiv = document.createElement('div');
+                            entryDiv.setAttribute('class', 'entry');
+
+                            var nameHeading = document.createElement('h3');
+                            nameHeading.textContent = entry.username; // Отображаем имя пользователя
+
+                            var messageParagraph = document.createElement('p');
+                            messageParagraph.textContent = entry.message; // Сообщение пользователя
+
+                            var dateParagraph = document.createElement('p');
+                            var date = new Date(entry.postedDate);
+                            var formattedDate = date.toLocaleString(); // Форматирование даты
+                            dateParagraph.textContent = 'Опубликовано: ' + formattedDate;
+
+                            entryDiv.appendChild(nameHeading);
+                            entryDiv.appendChild(messageParagraph);
+                            entryDiv.appendChild(dateParagraph);
+
+                            entriesContainer.appendChild(entryDiv);
+                        }
+                    });
+                }
+            };
+            xhr.send();
+        }
     });
 </script>
 </body>

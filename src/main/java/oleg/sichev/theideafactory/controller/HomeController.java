@@ -10,6 +10,11 @@ public class HomeController {
         return "theIdeaFactoryIndex";
     }
 
+    @GetMapping("/theIdeaFactoryIndexAdmin")
+    public String postsTheIdeaFactoryIndexForAdmin(){
+        return "theIdeaFactoryIndexAdmin";
+    }
+
     @GetMapping("/login")
     public String login() {
         return "login";

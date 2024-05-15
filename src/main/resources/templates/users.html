@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Список пользователей</title>
+</head>
+<body>
+<h1>Список пользователей</h1>
+<table border="1">
+  <thead>
+  <tr>
+    <th>Name</th>
+    <th>Username</th>
+    <th>Email</th>
+    <th>Password</th>
+    <th>Roles</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr th:each="user : ${users}">
+    <td th:text="${user.name}"></td>
+    <td th:text="${user.username}"></td>
+    <td th:text="${user.email}"></td>
+    <td th:text="${user.password}"></td>
+    <td>
+      <ul>
+        <li th:each="role : ${user.roles}" th:text="${role.name}"></li>
+      </ul>
+    </td>
+  </tr>
+  </tbody>
+</table>
+</body>
+</html>

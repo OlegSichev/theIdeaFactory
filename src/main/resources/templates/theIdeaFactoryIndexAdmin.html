@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Фабрика идей</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: calc(100% - 240px); /* Учитывая ширину меню */
+            max-width: 600px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #444;
+        }
+
+        .title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .input-field {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .submit-btn, .update-btn {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .submit-btn {
+            background-color: #007bff;
+        }
+
+        .update-btn {
+            background-color: #28a745;
+        }
+
+        .logout-btn {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .entry {
+            border-top: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .menu {
+            width: 200px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: #ddd;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu button {
+            display: block;
+            margin-bottom: 10px;
+            width: 100%;
+            padding: 10px;
+            color: #fff;
+            background: #6c757d;
+            border: none;
+            text-align: left;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .menu button.logout-btn {
+            background: #dc3545;
+        }
+    </style>
+</head>
+<body>
+<div class="menu">
+    <button onclick="location.href='/'">Главная страница</button>
+    <button disabled>Блог</button>
+    <button class="users-btn" onclick="location.href='/users'">Список пользователей</button>
+    <button class="logout-btn" onclick="location.href='/logout'">Выход</button>
+</div>
+
+<div class="container">
+    <h2>Фабрика идей</h2>
+    <div id="username" class="title"></div>
+    <form th:action="@{/theIdeaFactoryIndex}" method="post" enctype="multipart/form-data">
+        <textarea class="input-field" name="message" placeholder="Ваше предложение"></textarea>
+        <label><input type="checkbox" id="anonymousCheckbox"> Анонимно</label>
+        <br>
+        <br>
+        <label for="fileUpload">Прикрепить файл:</label>
+        <input type="file" id="fileUpload" name="fileUpload">
+        <br>
+        <br>
+        <button class="update-btn" type="button" onclick="location.reload();">Обновить</button>
+        <button class="submit-btn" type="submit">Отправить предложение</button>
+    </form>
+
+    <div id="entriesContainer"></div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var currentUser = null;
+        var usernameField = document.getElementById('username');
+        var xhrUser = new XMLHttpRequest();
+        xhrUser.open("GET", "/username", true);
+        xhrUser.onreadystatechange = function () {
+            if (xhrUser.readyState === 4 && xhrUser.status === 200) {
+                currentUser = xhrUser.responseText.trim();
+                if (currentUser) {
+                    usernameField.innerHTML = '<strong>Ваше имя:</strong> ' + currentUser;
+                } else {
+                    usernameField.innerHTML = '<strong>Пользователь:</strong> Гость';
+                }
+            }
+        };
+        xhrUser.send();
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/getEntriesFromDatabase", true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                var entries = JSON.parse(xhr.responseText);
+                var entriesContainer = document.getElementById('entriesContainer');
+
+                // Сортировка записей от новых к старым
+                entries.sort(function(a, b) {
+                    return new Date(b.postedDate) - new Date(a.postedDate);
+                });
+
+                entries.forEach(function (entry) {
+                    var entryDiv = document.createElement('div');
+                    entryDiv.setAttribute('class', 'entry');
+                    var nameHeading = document.createElement('h3');
+                    nameHeading.textContent = entry.username;
+                    var messageParagraph = document.createElement('p');
+                    messageParagraph.textContent = entry.message;
+                    var dateParagraph = document.createElement('p');
+                    var date = new Date(entry.postedDate);
+                    dateParagraph.textContent = 'Опубликовано: ' + date.toLocaleString();
+                    entryDiv.appendChild(nameHeading);
+                    entryDiv.appendChild(messageParagraph);
+                    entryDiv.appendChild(dateParagraph);
+                    entriesContainer.appendChild(entryDiv);
+                });
+            }
+        };
+        xhr.send();
+    });
+</script>
+</body>
+</html>
