@@ -3,32 +3,135 @@
 <head>
   <meta charset="UTF-8">
   <title>Список пользователей</title>
+  <style>
+    /* Общие стили */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      display: flex;
+    }
+
+    h1 {
+      text-align: center;
+      color: #444;
+      margin-bottom: 20px;
+    }
+
+    /* Стили для бокового меню */
+    .sidebar {
+      width: 200px;
+      background-color: #343a40;
+      padding: 20px;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      height: 100vh;
+      position: fixed;
+    }
+
+    .sidebar a {
+      display: block;
+      color: #fff;
+      padding: 10px 15px;
+      text-decoration: none;
+      margin-bottom: 10px;
+      border-radius: 4px;
+    }
+
+    .sidebar a.logout {
+      background-color: #dc3545;
+      color: #fff;
+    }
+
+    .sidebar a:not(.logout) {
+      background-color: #6c757d;
+    }
+
+    .sidebar a:hover {
+      background-color: #495057;
+    }
+
+    /* Стили для основного контента */
+    .content {
+      margin-left: 220px;
+      padding: 20px;
+      flex-grow: 1;
+    }
+
+    /* Стили для таблицы */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    table thead {
+      background-color: #007bff;
+      color: #fff;
+    }
+
+    table th, table td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    table th {
+      text-transform: uppercase;
+    }
+
+    table tr:nth-child(even) {
+      background-color: #f8f8f8;
+    }
+
+    table tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    table td ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    table td ul li {
+      list-style-type: disc;
+    }
+  </style>
 </head>
 <body>
-<h1>Список пользователей</h1>
-<table border="1">
-  <thead>
-  <tr>
-    <th>Name</th>
-    <th>Username</th>
-    <th>Email</th>
-    <th>Password</th>
-    <th>Roles</th>
-  </tr>
-  </thead>
-  <tbody>
-  <tr th:each="user : ${users}">
-    <td th:text="${user.name}"></td>
-    <td th:text="${user.username}"></td>
-    <td th:text="${user.email}"></td>
-    <td th:text="${user.password}"></td>
-    <td>
-      <ul>
-        <li th:each="role : ${user.roles}" th:text="${role.name}"></li>
-      </ul>
-    </td>
-  </tr>
-  </tbody>
-</table>
+<div class="sidebar">
+  <a href="/">Главная страница</a>
+  <a href="">Блог</a>
+  <a href="/users">Список пользователей</a>
+  <a href="/logout" class="logout">Выход</a>
+</div>
+<div class="content">
+  <h1>Список пользователей</h1>
+  <table>
+    <thead>
+    <tr>
+      <th>Name</th>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Password</th>
+      <th>Roles</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="user : ${users}">
+      <td th:text="${user.name}"></td>
+      <td th:text="${user.username}"></td>
+      <td th:text="${user.email}"></td>
+      <td th:text="${user.password}"></td>
+      <td>
+        <ul>
+          <li th:each="role : ${user.roles}" th:text="${role.name}"></li>
+        </ul>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</div>
 </body>
 </html>

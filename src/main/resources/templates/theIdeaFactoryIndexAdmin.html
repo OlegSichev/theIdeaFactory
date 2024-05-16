@@ -11,7 +11,7 @@
         }
 
         .container {
-            width: calc(100% - 240px); /* Учитывая ширину меню */
+            width: 100%;
             max-width: 600px;
             margin: 20px auto;
             background: #fff;
@@ -40,7 +40,24 @@
             border-radius: 5px;
         }
 
-        .submit-btn, .update-btn {
+        .submit-btn,
+        .logout-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff; /* Цвет кнопки "Отправить предложение" */
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .logout-btn {
+            background-color: red;
+        }
+
+        .update-btn {
             width: 100%;
             padding: 10px;
             margin-bottom: 10px;
@@ -49,25 +66,40 @@
             color: #fff;
             font-weight: bold;
             cursor: pointer;
-        }
-
-        .submit-btn {
-            background-color: #007bff;
-        }
-
-        .update-btn {
             background-color: #28a745;
         }
 
-        .logout-btn {
-            background-color: #dc3545;
-            color: #fff;
+        /* Добавление стилей для контейнера фильтров */
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
         }
 
-        .entry {
-            border-top: 1px solid #ccc;
+        .filter-input {
+            flex: 1;
             padding: 10px;
-            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .sort-btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .sort-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #6c757d;
         }
 
         .menu {
@@ -97,6 +129,7 @@
         .menu button.logout-btn {
             background: #dc3545;
         }
+
     </style>
 </head>
 <body>
@@ -113,67 +146,138 @@
     <form th:action="@{/theIdeaFactoryIndex}" method="post" enctype="multipart/form-data">
         <textarea class="input-field" name="message" placeholder="Ваше предложение"></textarea>
         <label><input type="checkbox" id="anonymousCheckbox"> Анонимно</label>
-        <br>
-        <br>
+        <br><br>
         <label for="fileUpload">Прикрепить файл:</label>
         <input type="file" id="fileUpload" name="fileUpload">
-        <br>
-        <br>
+        <br><br>
         <button class="update-btn" type="button" onclick="location.reload();">Обновить</button>
         <button class="submit-btn" type="submit">Отправить предложение</button>
-    </form>
 
+        <div class="filter-container">
+            <input type="text" id="userFilter" class="filter-input" placeholder="Введите имя пользователя для поиска">
+            <input type="date" id="dateFilter" class="filter-input">
+        </div>
+
+        <div class="sort-btn-container">
+            <button type="button" id="sortDescBtn" class="sort-btn">Сначала новое</button>
+            <button type="button" id="sortAscBtn" class="sort-btn">Сначала старое</button>
+        </div>
+
+
+        <div id="currentUsername"></div>
+        <div id="entriesContainer1"></div>
+    </form>
     <div id="entriesContainer"></div>
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         var currentUser = null;
-        var usernameField = document.getElementById('username');
+        var currentUsernameField = document.getElementById('currentUsername');
+        var userFilterInput = document.getElementById('userFilter');
+        var dateFilterInput = document.getElementById('dateFilter');
+        var entriesContainer = document.getElementById('entriesContainer1');
+        var allEntries = [];
+
+        // Получение имени текущего пользователя
         var xhrUser = new XMLHttpRequest();
         xhrUser.open("GET", "/username", true);
         xhrUser.onreadystatechange = function () {
             if (xhrUser.readyState === 4 && xhrUser.status === 200) {
                 currentUser = xhrUser.responseText.trim();
                 if (currentUser) {
-                    usernameField.innerHTML = '<strong>Ваше имя:</strong> ' + currentUser;
+                    currentUsernameField.innerHTML = '<strong>Ваше имя:</strong> ' + currentUser;
                 } else {
-                    usernameField.innerHTML = '<strong>Пользователь:</strong> Гость';
+                    currentUsernameField.innerHTML = '<strong>Пользователь:</strong> Гость';
                 }
             }
         };
         xhrUser.send();
 
+        // Получение записей из базы данных
         var xhr = new XMLHttpRequest();
         xhr.open("GET", "/getEntriesFromDatabase", true);
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 && xhr.status === 200) {
-                var entries = JSON.parse(xhr.responseText);
-                var entriesContainer = document.getElementById('entriesContainer');
+                allEntries = JSON.parse(xhr.responseText);
 
-                // Сортировка записей от новых к старым
-                entries.sort(function(a, b) {
-                    return new Date(b.postedDate) - new Date(a.postedDate);
-                });
-
-                entries.forEach(function (entry) {
-                    var entryDiv = document.createElement('div');
-                    entryDiv.setAttribute('class', 'entry');
-                    var nameHeading = document.createElement('h3');
-                    nameHeading.textContent = entry.username;
-                    var messageParagraph = document.createElement('p');
-                    messageParagraph.textContent = entry.message;
-                    var dateParagraph = document.createElement('p');
-                    var date = new Date(entry.postedDate);
-                    dateParagraph.textContent = 'Опубликовано: ' + date.toLocaleString();
-                    entryDiv.appendChild(nameHeading);
-                    entryDiv.appendChild(messageParagraph);
-                    entryDiv.appendChild(dateParagraph);
-                    entriesContainer.appendChild(entryDiv);
-                });
+                // Сортировка записей от новых к старым по умолчанию
+                sortEntries('desc');
+                displayEntries(allEntries);
             }
         };
         xhr.send();
+
+        // Функция для отображения записей
+        function displayEntries(entries) {
+            entriesContainer.innerHTML = "";
+            if (entries.length === 0) {
+                entriesContainer.innerHTML = '<p>Записи не найдены.</p>';
+                return;
+            }
+            entries.forEach(function (entry) {
+                var entryDiv = document.createElement('div');
+                entryDiv.setAttribute('class', 'entry');
+                var nameHeading = document.createElement('h3');
+                nameHeading.textContent = entry.username;
+                var messageParagraph = document.createElement('p');
+                messageParagraph.textContent = entry.message;
+                var dateParagraph = document.createElement('p');
+                var date = new Date(entry.postedDate);
+                dateParagraph.textContent = 'Опубликовано: ' + date.toLocaleString();
+                entryDiv.appendChild(nameHeading);
+                entryDiv.appendChild(messageParagraph);
+                entryDiv.appendChild(dateParagraph);
+                entriesContainer.appendChild(entryDiv);
+            });
+        }
+
+        // Функция для сортировки записей
+        function sortEntries(order) {
+            allEntries.sort(function (a, b) {
+                var dateA = new Date(a.postedDate);
+                var dateB = new Date(b.postedDate);
+                return order === 'asc' ? dateA - dateB : dateB - dateA;
+            });
+        }
+
+        // Обработчики для ввода фильтра
+        userFilterInput.addEventListener('input', filterEntries);
+        dateFilterInput.addEventListener('input', filterEntries);
+
+        function filterEntries() {
+            var userFilter = userFilterInput.value.toLowerCase();
+            var dateFilter = dateFilterInput.value;
+
+            var filteredEntries = allEntries;
+
+            if (userFilter) {
+                filteredEntries = filteredEntries.filter(function (entry) {
+                    return entry.username.toLowerCase().includes(userFilter);
+                });
+            }
+
+            if (dateFilter) {
+                var selectedDate = new Date(dateFilter);
+                filteredEntries = filteredEntries.filter(function (entry) {
+                    var entryDate = new Date(entry.postedDate);
+                    return entryDate.toDateString() === selectedDate.toDateString();
+                });
+            }
+
+            displayEntries(filteredEntries);
+        }
+
+        // Обработчики для кнопок сортировки
+        document.getElementById('sortDescBtn').addEventListener('click', function () {
+            sortEntries('desc');
+            displayEntries(allEntries);
+        });
+
+        document.getElementById('sortAscBtn').addEventListener('click', function () {
+            sortEntries('asc');
+            displayEntries(allEntries);
+        });
     });
 </script>
 </body>
