@@ -4,12 +4,21 @@
   <meta charset="UTF-8">
   <title>Список пользователей</title>
   <style>
-    /* Общие стили */
     body {
       font-family: Arial, sans-serif;
       background-color: #f4f4f4;
       margin: 0;
-      display: flex;
+      padding: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
     }
 
     h1 {
@@ -18,46 +27,71 @@
       margin-bottom: 20px;
     }
 
-    /* Стили для бокового меню */
-    .sidebar {
-      width: 200px;
-      background-color: #343a40;
-      padding: 20px;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-      height: 100vh;
-      position: fixed;
-    }
-
-    .sidebar a {
-      display: block;
-      color: #fff;
-      padding: 10px 15px;
-      text-decoration: none;
+    .input-field {
+      width: calc(100% - 20px);
+      padding: 10px;
       margin-bottom: 10px;
-      border-radius: 4px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
     }
 
-    .sidebar a.logout {
-      background-color: #dc3545;
+    .submit-btn,
+    .logout-btn,
+    .update-btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
       color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 10px;
     }
 
-    .sidebar a:not(.logout) {
-      background-color: #6c757d;
+    .submit-btn {
+      background-color: #007bff;
     }
 
-    .sidebar a:hover {
-      background-color: #495057;
+    .logout-btn {
+      background-color: red;
     }
 
-    /* Стили для основного контента */
-    .content {
-      margin-left: 220px;
+    .update-btn {
+      background-color: #28a745;
+    }
+
+    .menu {
+      width: 200px;
+      position: fixed;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background: #ddd;
       padding: 20px;
-      flex-grow: 1;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     }
 
-    /* Стили для таблицы */
+    .menu a {
+      display: block;
+      margin-bottom: 10px;
+      width: auto; /* Ширина кнопок */
+      height: auto;
+      padding: 8px; /* Уменьшен размер */
+      font-size: 14px; /* Уменьшен размер */
+      color: #fff;
+      background: #6c757d;
+      border: none;
+      text-align: left;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .menu a.logout-btn {
+      background: #dc3545;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -97,25 +131,31 @@
     table td ul li {
       list-style-type: disc;
     }
+
+    .container-table {
+      margin-left: 220px;
+      padding: 20px;
+    }
   </style>
 </head>
 <body>
-<div class="sidebar">
+<div class="menu">
   <a href="/">Главная страница</a>
-  <a href="">Блог</a>
-  <a href="/users">Список пользователей</a>
-  <a href="/logout" class="logout">Выход</a>
+  <a href="#">Блог</a>
+  <a href="/users">Обновить</a>
+  <a href="/theIdeaFactoryIndexAdmin">Администрирование</a>
+  <a href="/logout" class="logout-btn">Выход</a>
 </div>
-<div class="content">
+<div class="container-table">
   <h1>Список пользователей</h1>
   <table>
     <thead>
     <tr>
-      <th>Name</th>
-      <th>Username</th>
-      <th>Email</th>
-      <th>Password</th>
-      <th>Roles</th>
+      <th>Имя</th>
+      <th>Имя пользователя</th>
+      <th>Эл. почта</th>
+      <th>Пароль</th>
+      <th>Роли</th>
     </tr>
     </thead>
     <tbody>

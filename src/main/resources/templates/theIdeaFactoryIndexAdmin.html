@@ -131,6 +131,23 @@
             background: #dc3545;
         }
 
+        /* Добавление стилей для контейнера уведомлений */
+        .notification {
+            display: none;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            color: #155724;
+        }
+
+        .notification.error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
     </style>
 </head>
 <body>
@@ -144,7 +161,7 @@
 <div class="container">
     <h2>Фабрика идей</h2>
     <div id="username" class="title"></div>
-    <form th:action="@{/theIdeaFactoryIndex}" method="post" enctype="multipart/form-data">
+    <form id="ideaForm" th:action="@{/admin/theIdeaFactoryIndexAdmin}" method="post" enctype="multipart/form-data">
         <textarea class="input-field" name="message" placeholder="Ваше предложение"></textarea>
         <label><input type="checkbox" id="anonymousCheckbox"> Анонимно</label>
         <br><br>
@@ -153,9 +170,10 @@
         <br><br>
         <button class="update-btn" type="button" onclick="location.reload();">Обновить</button>
         <button class="submit-btn" type="submit">Отправить предложение</button>
+        <div id="notification" class="notification"></div> <!-- Поле для уведомлений -->
 
         <div class="filter-container">
-            <input type="text" id="userFilter" class="filter-input" placeholder="Введите имя пользователя для поиска">
+            <input type="text" id="usernameFilter" class="filter-input" placeholder="Введите логин пользователя">
             <input type="date" id="dateFilter" class="filter-input">
         </div>
 
@@ -163,7 +181,6 @@
             <button type="button" id="sortDescBtn" class="sort-btn">Сначала новое</button>
             <button type="button" id="sortAscBtn" class="sort-btn">Сначала старое</button>
         </div>
-
 
         <div id="currentUsername"></div>
         <div id="entriesContainer1"></div>
@@ -175,14 +192,15 @@
     document.addEventListener("DOMContentLoaded", function () {
         var currentUser = null;
         var currentUsernameField = document.getElementById('currentUsername');
-        var userFilterInput = document.getElementById('userFilter');
         var dateFilterInput = document.getElementById('dateFilter');
+        var usernameFilterInput = document.getElementById('usernameFilter');
         var entriesContainer = document.getElementById('entriesContainer1');
+        var notification = document.getElementById('notification');
         var allEntries = [];
 
         // Получение имени текущего пользователя
         var xhrUser = new XMLHttpRequest();
-        xhrUser.open("GET", "/username", true);
+        xhrUser.open("GET", "/admin/username", true);
         xhrUser.onreadystatechange = function () {
             if (xhrUser.readyState === 4 && xhrUser.status === 200) {
                 currentUser = xhrUser.responseText.trim();
@@ -197,12 +215,10 @@
 
         // Получение записей из базы данных
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/getEntriesFromDatabase", true);
+        xhr.open("GET", "/admin/getEntriesFromDatabase", true);
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 && xhr.status === 200) {
                 allEntries = JSON.parse(xhr.responseText);
-
-                // Сортировка записей от новых к старым по умолчанию
                 sortEntries('desc');
                 displayEntries(allEntries);
             }
@@ -233,53 +249,106 @@
             });
         }
 
-        // Функция для сортировки записей
+        // Функция сортировки записей
         function sortEntries(order) {
-            allEntries.sort(function (a, b) {
-                var dateA = new Date(a.postedDate);
-                var dateB = new Date(b.postedDate);
-                return order === 'asc' ? dateA - dateB : dateB - dateA;
-            });
+            if (order === 'desc') {
+                allEntries.sort((a, b) => new Date(b.postedDate) - new Date(a.postedDate));
+            } else {
+                allEntries.sort((a, b) => new Date(a.postedDate) - new Date(b.postedDate));
+            }
+            displayEntries(allEntries);
         }
 
-        // Обработчики для ввода фильтра
-        userFilterInput.addEventListener('input', filterEntries);
-        dateFilterInput.addEventListener('input', filterEntries);
-
-        function filterEntries() {
-            var userFilter = userFilterInput.value.toLowerCase();
-            var dateFilter = dateFilterInput.value;
-
-            var filteredEntries = allEntries;
-
-            if (userFilter) {
-                filteredEntries = filteredEntries.filter(function (entry) {
-                    return entry.username.toLowerCase().includes(userFilter);
-                });
-            }
-
-            if (dateFilter) {
-                var selectedDate = new Date(dateFilter);
-                filteredEntries = filteredEntries.filter(function (entry) {
-                    var entryDate = new Date(entry.postedDate);
-                    return entryDate.toDateString() === selectedDate.toDateString();
-                });
-            }
-
+        // Фильтрация записей по дате
+        function filterEntriesByDate(date) {
+            const filteredEntries = allEntries.filter(entry => {
+                const entryDate = new Date(entry.postedDate).toISOString().split('T')[0];
+                return entryDate === date;
+            });
             displayEntries(filteredEntries);
         }
 
-        // Обработчики для кнопок сортировки
+        // Фильтрация записей по логину пользователя
+        function filterEntriesByUsername(username) {
+            const filteredEntries = allEntries.filter(entry => {
+                return entry.username.toLowerCase().startsWith(username.toLowerCase());
+            });
+            displayEntries(filteredEntries);
+        }
+
+    // Событиядля кнопок сортировки
         document.getElementById('sortDescBtn').addEventListener('click', function () {
             sortEntries('desc');
-            displayEntries(allEntries);
         });
 
         document.getElementById('sortAscBtn').addEventListener('click', function () {
             sortEntries('asc');
-            displayEntries(allEntries);
         });
+
+        // Обработчик для поля фильтра даты
+        dateFilterInput.addEventListener('change', function () {
+            const selectedDate = dateFilterInput.value;
+            if (selectedDate) {
+                filterEntriesByDate(selectedDate);
+            } else {
+                displayEntries(allEntries);
+            }
+        });
+
+        // Обработчик для поля фильтра логина
+        usernameFilterInput.addEventListener('input', function () {
+            const username = usernameFilterInput.value;
+            if (username) {
+                filterEntriesByUsername(username);
+            } else {
+                displayEntries(allEntries);
+            }
+        });
+
+        // Обработчик события для отправки формы
+        function answerForUser() {
+            var form = document.getElementById("ideaForm");
+
+            form.addEventListener("submit", function (event) {
+                event.preventDefault();
+
+                var message = document.querySelector("textarea[name='message']").value; // Исправлено
+                var anonymousCheckbox = document.getElementById("anonymousCheckbox");
+                var isAnonymous = anonymousCheckbox.checked;
+
+                let thankYouMessage;
+                if (isAnonymous) {
+                    thankYouMessage = "Спасибо! Ваше предложение отправлено анонимно!";
+                } else {
+                    thankYouMessage = `Спасибо, ${currentUser}! Ваше предложение отправлено!`; // Исправлено
+                }
+
+                var formData = new FormData(form);
+
+                fetch(form.action, {
+                    method: "POST",
+                    body: formData,
+                })
+                    .then(response => response.ok ? response.text() : Promise.reject('Ошибка при отправке формы'))
+                    .then(result => {
+                        notification.style.display = 'block';
+                        notification.classList.remove('error');
+                        notification.textContent = thankYouMessage;
+                        form.reset();
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                        notification.style.display = 'block';
+                        notification.classList.add('error');
+                        notification.textContent = 'Произошла ошибка при отправке предложения. Попробуйте еще раз.';
+                    });
+            });
+        }
+
+        // Инициализируем функцию
+        answerForUser();
     });
 </script>
+
 </body>
 </html>

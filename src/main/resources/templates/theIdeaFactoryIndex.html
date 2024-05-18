@@ -131,6 +131,23 @@
             background: #dc3545;
         }
 
+        /* Добавление стилей для контейнера уведомлений */
+        .notification {
+            display: none;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            color: #155724;
+        }
+
+        .notification.error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
     </style>
 </head>
 <body>
@@ -144,7 +161,7 @@
 <div class="container">
     <h2>Фабрика идей</h2>
     <div id="username" class="title"></div>
-    <form th:action="@{/theIdeaFactoryIndex}" method="post" enctype="multipart/form-data">
+    <form id="ideaForm" th:action="@{/theIdeaFactoryIndex}" method="post" enctype="multipart/form-data">
         <textarea class="input-field" name="message" placeholder="Ваше предложение"></textarea>
         <label><input type="checkbox" id="anonymousCheckbox"> Анонимно</label>
         <br><br>
@@ -153,6 +170,7 @@
         <br><br>
         <button class="update-btn" type="button" onclick="location.reload();">Обновить</button>
         <button class="submit-btn" type="submit">Отправить предложение</button>
+        <div id="notification" class="notification"></div> <!-- Поле для уведомлений -->
 
         <div class="filter-container">
             <input type="date" id="dateFilter" class="filter-input">
@@ -162,7 +180,6 @@
             <button type="button" id="sortDescBtn" class="sort-btn">Сначала новое</button>
             <button type="button" id="sortAscBtn" class="sort-btn">Сначала старое</button>
         </div>
-
 
         <div id="currentUsername"></div>
         <div id="entriesContainer1"></div>
@@ -176,7 +193,8 @@
         var currentUsernameField = document.getElementById('currentUsername');
         var dateFilterInput = document.getElementById('dateFilter');
         var entriesContainer = document.getElementById('entriesContainer1');
-        var allEntries = [];
+        var notification = document.getElementById('notification');
+        var allEntries = []; // Инициализация пустого массива для записей
 
         // Получение имени текущего пользователя
         var xhrUser = new XMLHttpRequest();
@@ -218,7 +236,7 @@
                 var entryDiv = document.createElement('div');
                 entryDiv.setAttribute('class', 'entry');
                 var nameHeading = document.createElement('h3');
-                nameHeading.textContent = entry.username
+                nameHeading.textContent = entry.username;
                 if (nameHeading.textContent == currentUser){
                     var messageParagraph = document.createElement('p');
                     messageParagraph.textContent = entry.message;
@@ -230,49 +248,94 @@
                     entryDiv.appendChild(dateParagraph);
                     entriesContainer.appendChild(entryDiv);
                 }
-
             });
         }
 
-        // Функция для сортировки записей
+        // Функция сортировки записей
         function sortEntries(order) {
-            allEntries.sort(function (a, b) {
-                var dateA = new Date(a.postedDate);
-                var dateB = new Date(b.postedDate);
-                return order === 'asc' ? dateA - dateB : dateB - dateA;
-            });
+            if(order === 'desc') {
+                allEntries.sort((a, b) => new Date(b.postedDate) - new Date(a.postedDate));
+            } else {
+                allEntries.sort((a, b) => new Date(a.postedDate) - new Date(b.postedDate));
+            }
+            displayEntries(allEntries);
         }
 
-        // Обработчики для ввода фильтра
-        dateFilterInput.addEventListener('input', filterEntries);
-
-        function filterEntries() {
-            var dateFilter = dateFilterInput.value;
-
-            var filteredEntries = allEntries;
-
-            if (dateFilter) {
-                var selectedDate = new Date(dateFilter);
-                filteredEntries = filteredEntries.filter(function (entry) {
-                    var entryDate = new Date(entry.postedDate);
-                    return entryDate.toDateString() === selectedDate.toDateString();
-                });
-            }
-
+        // Функция фильтрации записей по дате
+        function filterEntriesByDate(date) {
+            const filteredEntries = allEntries.filter(entry => {
+                const entryDate = new Date(entry.postedDate).toISOString().split('T')[0];
+                return entryDate === date;
+            });
             displayEntries(filteredEntries);
         }
 
-        // Обработчики для кнопок сортировки
+        // События для кнопок сортировки
         document.getElementById('sortDescBtn').addEventListener('click', function () {
             sortEntries('desc');
-            displayEntries(allEntries);
         });
 
         document.getElementById('sortAscBtn').addEventListener('click', function () {
             sortEntries('asc');
-            displayEntries(allEntries);
         });
+
+        // Обработчик для поля фильтра даты
+        dateFilterInput.addEventListener('change', function () {
+            const selectedDate = dateFilterInput.value;
+            if (selectedDate) {
+                filterEntriesByDate(selectedDate);
+            } else {
+                displayEntries(allEntries);
+            }
+        });
+
+        // Обработчик события для отправки формы
+        function answerForUser() {
+            var form = document.getElementById("ideaForm");
+
+            // Обработчик события для отправки формы
+            form.addEventListener("submit", function (event) {
+                event.preventDefault(); // Предотвращаем стандартное поведение формы
+
+                var message = document.querySelector("textarea[name='message']").value;
+                var anonymousCheckbox = document.getElementById("anonymousCheckbox");
+                var isAnonymous = anonymousCheckbox.checked;
+
+                // Генерируем сообщение благодарности в зависимости от того, анонимно или нет отправляется предложение
+                let thankYouMessage;
+                if (isAnonymous) {
+                    thankYouMessage = "Спасибо! Ваше предложение отправлено анонимно!";
+                } else {
+                    thankYouMessage = `Спасибо, ${currentUser}! Ваше предложение отправлено!`; // Используем currentUser
+                }
+
+                var formData = new FormData(form);
+
+                // Отправляем данные формы на сервер
+                fetch(form.action, {
+                    method: "POST",
+                    body: formData,
+                })
+                    .then(response => response.ok ? response.text() : Promise.reject('Ошибка при отправке формы'))
+                    .then(result => {
+                        notification.style.display = 'block'; // Показываем контейнер с сообщением
+                        notification.classList.remove('error'); // Удаляем класс ошибки, если он был
+                        notification.textContent = thankYouMessage;
+                        form.reset(); // Сбрасываем форму после отправки
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                        notification.style.display = 'block';
+                        notification.classList.add('error'); // Добавляем класс ошибки
+                        notification.textContent = 'Произошла ошибка при отправке предложения. Попробуйте еще раз.';
+                    });
+            });
+        }
+
+        // Инициализируем функцию
+        answerForUser();
     });
 </script>
+
 </body>
 </html>
