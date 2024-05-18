@@ -44,7 +44,7 @@
         .logout-btn {
             width: 100%;
             padding: 10px;
-            background-color: #007bff; /* Изменение цвета для кнопки "Отправить предложение" */
+            background-color: #007bff; /* Цвет кнопки "Отправить предложение" */
             border: none;
             border-radius: 5px;
             color: #fff;
@@ -69,6 +69,39 @@
             background-color: #28a745;
         }
 
+        /* Добавление стилей для контейнера фильтров */
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .filter-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .sort-btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .sort-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #6c757d;
+        }
+
         .menu {
             width: 200px;
             position: fixed;
@@ -91,17 +124,16 @@
             text-align: left;
             border-radius: 5px;
             font-weight: bold;
+            cursor: pointer;
         }
 
         .menu button.logout-btn {
             background: #dc3545;
-            /*background-color: red;*/
-            /*color: #fff;*/
         }
+
     </style>
 </head>
 <body>
-
 <div class="menu">
     <button onclick="location.href='/'">Главная страница</button>
     <button disabled>Блог</button>
@@ -112,130 +144,134 @@
 <div class="container">
     <h2>Фабрика идей</h2>
     <div id="username" class="title"></div>
-    <form id="ideaForm" th:action="@{/theIdeaFactoryIndex}" method="post" enctype="multipart/form-data">
+    <form th:action="@{/theIdeaFactoryIndex}" method="post" enctype="multipart/form-data">
         <textarea class="input-field" name="message" placeholder="Ваше предложение"></textarea>
         <label><input type="checkbox" id="anonymousCheckbox"> Анонимно</label>
-        <br>
-        <br>
-        <!-- Поле для загрузки файла -->
+        <br><br>
         <label for="fileUpload">Прикрепить файл:</label>
         <input type="file" id="fileUpload" name="fileUpload">
-        <br>
-        <br>
+        <br><br>
         <button class="update-btn" type="button" onclick="location.reload();">Обновить</button>
         <button class="submit-btn" type="submit">Отправить предложение</button>
-    </form>
 
-    <div id="entriesContainer2" style="display: none;"></div> <!-- Для сообщения благодарности -->
-    <div id="entriesContainer"></div> <!-- Для списка постов -->
+        <div class="filter-container">
+            <input type="date" id="dateFilter" class="filter-input">
+        </div>
+
+        <div class="sort-btn-container">
+            <button type="button" id="sortDescBtn" class="sort-btn">Сначала новое</button>
+            <button type="button" id="sortAscBtn" class="sort-btn">Сначала старое</button>
+        </div>
+
+
+        <div id="currentUsername"></div>
+        <div id="entriesContainer1"></div>
+    </form>
+    <div id="entriesContainer"></div>
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        var currentUser = null; // При выполнении скрипта, имя пользователя сохраняется в это поле
+        var currentUser = null;
+        var currentUsernameField = document.getElementById('currentUsername');
+        var dateFilterInput = document.getElementById('dateFilter');
+        var entriesContainer = document.getElementById('entriesContainer1');
+        var allEntries = [];
 
+        // Получение имени текущего пользователя
         var xhrUser = new XMLHttpRequest();
         xhrUser.open("GET", "/username", true);
         xhrUser.onreadystatechange = function () {
             if (xhrUser.readyState === 4 && xhrUser.status === 200) {
-                currentUser = xhrUser.responseText.trim(); // Получаем имя пользователя
-                var usernameField = document.getElementById('username');
+                currentUser = xhrUser.responseText.trim();
                 if (currentUser) {
-                    usernameField.innerHTML = '<strong>Ваше имя:</strong> ' + currentUser;
-                    document.querySelector("form").addEventListener("submit", function (e) {
-                        var inputField = document.createElement('input');
-                        inputField.type = 'hidden';
-                        inputField.name = 'username';
-                        inputField.value = currentUser;
-                        this.appendChild(inputField);
-                    });
+                    currentUsernameField.innerHTML = '<strong>Ваше имя:</strong> ' + currentUser;
                 } else {
-                    usernameField.innerHTML = '<strong>Пользователь:</strong> Гость';
+                    currentUsernameField.innerHTML = '<strong>Пользователь:</strong> Гость';
                 }
-
-                // Fetch and display posts after the user is identified
-                answerForUser();
-                fetchPosts();
             }
         };
         xhrUser.send();
 
-        function answerForUser() {
-            var form = document.getElementById("ideaForm");
-            var entriesContainer2 = document.getElementById("entriesContainer2");
+        // Получение записей из базы данных
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/getEntriesFromDatabase", true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                allEntries = JSON.parse(xhr.responseText);
 
-            // Обработчик события для отправки формы
-            form.addEventListener("submit", function (event) {
-                event.preventDefault(); // Предотвращаем стандартное поведение формы
+                // Сортировка записей от новых к старым по умолчанию
+                sortEntries('desc');
+                displayEntries(allEntries);
+            }
+        };
+        xhr.send();
 
-                var message = document.querySelector("textarea[name='message']").value;
-                var anonymousCheckbox = document.getElementById("anonymousCheckbox");
-                var isAnonymous = anonymousCheckbox.checked;
-
-                // Генерируем сообщение благодарности в зависимости от того, анонимно или нет отправляется предложение
-                let thankYouMessage;
-                if (isAnonymous) {
-                    thankYouMessage = "Спасибо! Ваше предложение отправлено анонимно!";
-                } else {
-                    thankYouMessage = `Спасибо, ${document.getElementById('username').textContent.split(': ').pop()}! Ваше предложение отправлено!`;
+        // Функция для отображения записей
+        function displayEntries(entries) {
+            entriesContainer.innerHTML = "";
+            if (entries.length === 0) {
+                entriesContainer.innerHTML = '<p>Записи не найдены.</p>';
+                return;
+            }
+            entries.forEach(function (entry) {
+                var entryDiv = document.createElement('div');
+                entryDiv.setAttribute('class', 'entry');
+                var nameHeading = document.createElement('h3');
+                nameHeading.textContent = entry.username
+                if (nameHeading.textContent == currentUser){
+                    var messageParagraph = document.createElement('p');
+                    messageParagraph.textContent = entry.message;
+                    var dateParagraph = document.createElement('p');
+                    var date = new Date(entry.postedDate);
+                    dateParagraph.textContent = 'Опубликовано: ' + date.toLocaleString();
+                    entryDiv.appendChild(nameHeading);
+                    entryDiv.appendChild(messageParagraph);
+                    entryDiv.appendChild(dateParagraph);
+                    entriesContainer.appendChild(entryDiv);
                 }
 
-                var formData = new FormData(form);
-
-                // Отправляем данные формы на сервер
-                fetch(form.action, {
-                    method: "POST",
-                    body: formData,
-                })
-                    .then(response => response.ok ? response.text() : Promise.reject('Ошибка при отправке формы'))
-                    .then(result => {
-                        entriesContainer2.style.display = 'block'; // Показываем контейнер с сообщением
-                        entriesContainer2.textContent = thankYouMessage;
-                        form.reset(); // Сбрасываем форму после отправки
-                    })
-                    .catch(error => {
-                        console.error('Ошибка:', error);
-                        alert('Произошла ошибка при отправке предложения. Попробуйте еще раз.');
-                    });
             });
         }
 
-        function fetchPosts() {
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", "/getEntriesFromDatabase", true);
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    var entries = JSON.parse(xhr.responseText);
-                    var entriesContainer = document.getElementById('entriesContainer'); // Контейнер с постами. В нем посты фильтруются, собираются и отображаются
-                    entries.reverse(); // Переворачиваем, чтобы последние посты были первыми
-
-                    entries.forEach(function (entry) {
-                        if (entry.username === currentUser) { // Фильтрация по текущему пользователю
-                            var entryDiv = document.createElement('div');
-                            entryDiv.setAttribute('class', 'entry');
-
-                            var nameHeading = document.createElement('h3');
-                            nameHeading.textContent = entry.username; // Отображаем имя пользователя
-
-                            var messageParagraph = document.createElement('p');
-                            messageParagraph.textContent = entry.message; // Сообщение пользователя
-
-                            var dateParagraph = document.createElement('p');
-                            var date = new Date(entry.postedDate);
-                            var formattedDate = date.toLocaleString(); // Форматирование даты
-                            dateParagraph.textContent = 'Опубликовано: ' + formattedDate;
-
-                            entryDiv.appendChild(nameHeading);
-                            entryDiv.appendChild(messageParagraph);
-                            entryDiv.appendChild(dateParagraph);
-
-                            entriesContainer.appendChild(entryDiv);
-                        }
-                    });
-                }
-            };
-            xhr.send();
+        // Функция для сортировки записей
+        function sortEntries(order) {
+            allEntries.sort(function (a, b) {
+                var dateA = new Date(a.postedDate);
+                var dateB = new Date(b.postedDate);
+                return order === 'asc' ? dateA - dateB : dateB - dateA;
+            });
         }
+
+        // Обработчики для ввода фильтра
+        dateFilterInput.addEventListener('input', filterEntries);
+
+        function filterEntries() {
+            var dateFilter = dateFilterInput.value;
+
+            var filteredEntries = allEntries;
+
+            if (dateFilter) {
+                var selectedDate = new Date(dateFilter);
+                filteredEntries = filteredEntries.filter(function (entry) {
+                    var entryDate = new Date(entry.postedDate);
+                    return entryDate.toDateString() === selectedDate.toDateString();
+                });
+            }
+
+            displayEntries(filteredEntries);
+        }
+
+        // Обработчики для кнопок сортировки
+        document.getElementById('sortDescBtn').addEventListener('click', function () {
+            sortEntries('desc');
+            displayEntries(allEntries);
+        });
+
+        document.getElementById('sortAscBtn').addEventListener('click', function () {
+            sortEntries('asc');
+            displayEntries(allEntries);
+        });
     });
 </script>
 </body>
