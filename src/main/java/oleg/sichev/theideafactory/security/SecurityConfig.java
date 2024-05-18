@@ -12,29 +12,38 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class SecurityConfig {
 
     @Bean
-    public static PasswordEncoder passwordEncoder(){
+    public static PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
     public SecurityFilterChain filterSecurity(HttpSecurity http) throws Exception {
         http.csrf().disable()
-                .authorizeHttpRequests((authorize) ->
-                        authorize
-                                .requestMatchers("/css/**", "/js/**", "/images/**").
-                                permitAll() //Адреса к которым есть доступ до авторизации
-                                .anyRequest().authenticated()
-                ).formLogin(
-                        form -> form
-                                .loginPage("/login") //здесь указывается страница по умолчанию, куда попадает гость (не залогиненный пользователь)
-                                .loginProcessingUrl("/login")
-                                .defaultSuccessUrl("/")
-                                .permitAll()
-                ).logout(
-                        logout -> logout
-                                .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                                .permitAll()
+                .authorizeRequests(authorize -> authorize
+                        // Доступ к статическим ресурсам всем пользователям
+                        .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
+                        // Доступ к странице логина и регистрации всем пользователям
+                        .requestMatchers("/login", "/register").permitAll()
+                        // Доступ на главную страницу и к постам для пользователей и админов
+                        .requestMatchers("/", "/theIdeaFactoryIndex.html").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/posts/**").hasAnyRole("USER", "ADMIN")
+                        // Запретить доступ к административным страницам и списку пользователей для пользователя role USER
+                        .requestMatchers("/theIdeaFactoryIndexAdmin").hasRole("ADMIN")
+                        .requestMatchers("/users").hasRole("ADMIN")
+                        // Все остальные запросы требуют аутентификации
+                        .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginPage("/login") // Указываем страницу логина
+                        .loginProcessingUrl("/login") // URL обработки логина
+                        .defaultSuccessUrl("/", true) // URL после успешного логина
+                        .permitAll() // Разрешаем доступ ко всем пользователям
+                )
+                .logout(logout -> logout
+                        .logoutRequestMatcher(new AntPathRequestMatcher("/logout")) // URL для логаута
+                        .permitAll() // Разрешаем доступ ко всем пользователям
                 );
+
         return http.build();
     }
 }
