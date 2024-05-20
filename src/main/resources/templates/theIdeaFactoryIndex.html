@@ -243,7 +243,8 @@
                 entryDiv.style.marginBottom = "10px"; // Отступ между постами
 
                 var nameParagraph = document.createElement('p');
-                nameParagraph.innerHTML = '<strong style="font-weight: 600;">' + entry.username + '</strong>'; // Чуть более жирный шрифт
+                nameParagraph.innerHTML = '<strong style="font-weight: 600; font-size: 135%;">' + entry.username + '</strong>'; //Размер логина пользователя над постом
+                //nameParagraph.innerHTML = '<strong style="font-weight: 600;">' + entry.username + '</strong>';
 
                 var messageParagraph = document.createElement('p');
                 messageParagraph.textContent = entry.message;

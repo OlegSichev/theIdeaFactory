@@ -155,6 +155,7 @@
     <button onclick="location.href='/'">Главная страница</button>
     <button disabled>Блог</button>
     <button class="users-btn" onclick="location.href='/users'">Список пользователей</button>
+    <button class="users-btn" onclick="location.href='/theIdeaFactoryIndex'">Пользовательская страница</button>
     <button class="logout-btn" onclick="location.href='/logout'">Выход</button>
 </div>
 
@@ -239,8 +240,7 @@
                 entryDiv.style.marginBottom = "10px"; // Отступ между постами
 
                 var nameParagraph = document.createElement('p');
-                nameParagraph.innerHTML = '<strong style="font-weight: 600;">' + entry.username + '</strong>'; // Чуть более жирный шрифт
-
+                nameParagraph.innerHTML = '<strong style="font-weight: 600; font-size: 135%;">' + entry.username + '</strong>'; //Размер логина пользователя над постом
                 var messageParagraph = document.createElement('p');
                 messageParagraph.textContent = entry.message;
 
