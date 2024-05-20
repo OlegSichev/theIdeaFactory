@@ -218,9 +218,12 @@
             if (xhr.readyState === 4 && xhr.status === 200) {
                 allEntries = JSON.parse(xhr.responseText);
 
+                // Фильтрация записей по текущему пользователю
+                const userEntries = allEntries.filter(entry => entry.username === currentUser);
+
                 // Сортировка записей от новых к старым по умолчанию
-                sortEntries('desc');
-                displayEntries(allEntries);
+                sortEntries(userEntries, 'desc');
+                displayEntries(userEntries);
             }
         };
         xhr.send();
@@ -235,61 +238,88 @@
             entries.forEach(function (entry) {
                 var entryDiv = document.createElement('div');
                 entryDiv.setAttribute('class', 'entry');
-                var nameHeading = document.createElement('h3');
-                nameHeading.textContent = entry.username;
-                if (nameHeading.textContent == currentUser){
-                    var messageParagraph = document.createElement('p');
-                    messageParagraph.textContent = entry.message;
-                    var dateParagraph = document.createElement('p');
-                    var date = new Date(entry.postedDate);
-                    dateParagraph.textContent = 'Опубликовано: ' + date.toLocaleString();
-                    entryDiv.appendChild(nameHeading);
-                    entryDiv.appendChild(messageParagraph);
-                    entryDiv.appendChild(dateParagraph);
-                    entriesContainer.appendChild(entryDiv);
+                entryDiv.style.borderBottom = "1px solid #ccc"; // Нижняя граница для разделения постов
+                entryDiv.style.paddingBottom = "10px"; // Отступ снизу для лучшей читаемости
+                entryDiv.style.marginBottom = "10px"; // Отступ между постами
+
+                var nameParagraph = document.createElement('p');
+                nameParagraph.innerHTML = '<strong style="font-weight: 600;">' + entry.username + '</strong>'; // Чуть более жирный шрифт
+
+                var messageParagraph = document.createElement('p');
+                messageParagraph.textContent = entry.message;
+
+                var dateParagraph = document.createElement('p');
+                var date = new Date(entry.postedDate);
+                dateParagraph.textContent = 'Опубликовано: ' + date.toLocaleString();
+
+                entryDiv.appendChild(nameParagraph);
+                entryDiv.appendChild(messageParagraph);
+
+                // Проверить, есть ли файлы и добавить их к записи
+                if (entry.files && entry.files.length > 0) {
+                    var filesParagraph = document.createElement('p');
+                    filesParagraph.innerHTML = '<u>Прикрепленные файлы:</u>';
+
+                    var filesList = document.createElement('ul');
+                    entry.files.forEach(function (file) {
+                        var fileLink = document.createElement('a');
+                        fileLink.href = file.filePath;  // предполагается, что file.filePath содержит URL до загруженного файла
+                        fileLink.textContent = file.fileName;
+                        fileLink.download = file.fileName;
+
+                        var fileItem = document.createElement('li');
+                        fileItem.appendChild(fileLink);
+                        filesList.appendChild(fileItem);});
+
+                    entryDiv.appendChild(filesParagraph);
+                    entryDiv.appendChild(filesList);
                 }
+
+                entryDiv.appendChild(dateParagraph);
+                entriesContainer.appendChild(entryDiv);
             });
         }
 
-        // Функция сортировки записей
-        function sortEntries(order) {
-            if(order === 'desc') {
-                allEntries.sort((a, b) => new Date(b.postedDate) - new Date(a.postedDate));
-            } else {
-                allEntries.sort((a, b) => new Date(a.postedDate) - new Date(b.postedDate));
-            }
-            displayEntries(allEntries);
-        }
-
-        // Функция фильтрации записей по дате
-        function filterEntriesByDate(date) {
-            const filteredEntries = allEntries.filter(entry => {
+        // Вспомогательная функция для фильтрации записей по дате
+        function filterEntriesByDate(entries, date) {
+            const filteredEntries = entries.filter(entry => {
                 const entryDate = new Date(entry.postedDate).toISOString().split('T')[0];
                 return entryDate === date;
             });
             displayEntries(filteredEntries);
         }
 
+        // Функция сортировки записей
+        function sortEntries(entries, order) {
+            if (order === 'desc') {
+                entries.sort((a, b) => new Date(b.postedDate) - new Date(a.postedDate));
+            } else {
+                entries.sort((a, b) => new Date(a.postedDate) - new Date(b.postedDate));
+            }
+            displayEntries(entries);
+        }
+
         // События для кнопок сортировки
         document.getElementById('sortDescBtn').addEventListener('click', function () {
-            sortEntries('desc');
+            sortEntries(allEntries.filter(entry => entry.username === currentUser), 'desc');
         });
 
         document.getElementById('sortAscBtn').addEventListener('click', function () {
-            sortEntries('asc');
+            sortEntries(allEntries.filter(entry => entry.username === currentUser), 'asc');
         });
 
         // Обработчик для поля фильтра даты
         dateFilterInput.addEventListener('change', function () {
             const selectedDate = dateFilterInput.value;
+            const userEntries = allEntries.filter(entry => entry.username === currentUser);
             if (selectedDate) {
-                filterEntriesByDate(selectedDate);
+                filterEntriesByDate(userEntries, selectedDate);
             } else {
-                displayEntries(allEntries);
+                displayEntries(userEntries);
             }
         });
 
-        // Обработчик события для отправки формы
+        // Функция для отправки формы
         function answerForUser() {
             var form = document.getElementById("ideaForm");
 
@@ -306,7 +336,7 @@
                 if (isAnonymous) {
                     thankYouMessage = "Спасибо! Ваше предложение отправлено анонимно!";
                 } else {
-                    thankYouMessage = `Спасибо, ${currentUser}! Ваше предложение отправлено!`; // Используем currentUser
+                    thankYouMessage = `Спасибо, ${currentUser}! Ваше предложение отправлено!`; // Используем текущего пользователя
                 }
 
                 var formData = new FormData(form);

@@ -1,9 +1,9 @@
 package oleg.sichev.theideafactory.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import jakarta.persistence.Table;
-
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "entries")
@@ -21,6 +21,10 @@ public class TheIdeaFactoryEntity {
     @Temporal(TemporalType.TIMESTAMP)
     private Date postedDate = new Date();
 
+    @OneToMany(mappedBy = "entry", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private List<File> files;
+
     // Геттеры и сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -30,4 +34,6 @@ public class TheIdeaFactoryEntity {
     public void setMessage(String message) { this.message = message; }
     public Date getPostedDate() { return postedDate; }
     public void setPostedDate(Date postedDate) { this.postedDate = postedDate; }
+    public List<File> getFiles() { return files; }
+    public void setFiles(List<File> files) { this.files = files; }
 }

@@ -215,8 +215,7 @@
 
         // Получение записей из базы данных
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/admin/getEntriesFromDatabase", true);
-        xhr.onreadystatechange = function () {
+        xhr.open("GET", "/admin/getEntriesFromDatabase", true);xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 && xhr.status === 200) {
                 allEntries = JSON.parse(xhr.responseText);
                 sortEntries('desc');
@@ -235,75 +234,86 @@
             entries.forEach(function (entry) {
                 var entryDiv = document.createElement('div');
                 entryDiv.setAttribute('class', 'entry');
-                var nameHeading = document.createElement('h3');
-                nameHeading.textContent = entry.username;
+                entryDiv.style.borderBottom = "1px solid #ccc"; // Нижняя граница для разделения постов
+                entryDiv.style.paddingBottom = "10px"; // Отступ снизу для лучшей читаемости
+                entryDiv.style.marginBottom = "10px"; // Отступ между постами
+
+                var nameParagraph = document.createElement('p');
+                nameParagraph.innerHTML = '<strong style="font-weight: 600;">' + entry.username + '</strong>'; // Чуть более жирный шрифт
+
                 var messageParagraph = document.createElement('p');
                 messageParagraph.textContent = entry.message;
+
                 var dateParagraph = document.createElement('p');
                 var date = new Date(entry.postedDate);
                 dateParagraph.textContent = 'Опубликовано: ' + date.toLocaleString();
-                entryDiv.appendChild(nameHeading);
+
+                entryDiv.appendChild(nameParagraph);
                 entryDiv.appendChild(messageParagraph);
+
+                // Проверка наличия файлов
+                if (entry.files && entry.files.length > 0) {
+                    var filesParagraph = document.createElement('p');
+                    filesParagraph.innerHTML = '<u>Прикрепленные файлы:</u>';
+
+                    var filesList = document.createElement('ul');
+                    entry.files.forEach(function (file) {
+                        var fileLink = document.createElement('a');
+                        fileLink.href = file.filePath;
+                        fileLink.textContent = file.fileName;
+                        fileLink.download = file.fileName;
+
+                        var fileItem = document.createElement('li');
+                        fileItem.appendChild(fileLink);
+                        filesList.appendChild(fileItem);
+                    });
+
+                    entryDiv.appendChild(filesParagraph);
+                    entryDiv.appendChild(filesList);
+                }
+
                 entryDiv.appendChild(dateParagraph);
                 entriesContainer.appendChild(entryDiv);
             });
         }
 
-        // Функция сортировки записей
-        function sortEntries(order) {
-            if (order === 'desc') {
-                allEntries.sort((a, b) => new Date(b.postedDate) - new Date(a.postedDate));
-            } else {
-                allEntries.sort((a, b) => new Date(a.postedDate) - new Date(b.postedDate));
-            }
-            displayEntries(allEntries);
-        }
+        // Универсальная функция фильтрации
+        function filterEntries() {
+            const selectedDate = dateFilterInput.value;
+            const username = usernameFilterInput.value.toLowerCase();
 
-        // Фильтрация записей по дате
-        function filterEntriesByDate(date) {
             const filteredEntries = allEntries.filter(entry => {
                 const entryDate = new Date(entry.postedDate).toISOString().split('T')[0];
-                return entryDate === date;
+                const matchesDate = selectedDate ? entryDate === selectedDate : true;
+                const matchesUsername = username ? entry.username.toLowerCase().includes(username) : true;
+                return matchesDate && matchesUsername;
             });
             displayEntries(filteredEntries);
         }
 
-        // Фильтрация записей по логину пользователя
-        function filterEntriesByUsername(username) {
-            const filteredEntries = allEntries.filter(entry => {
-                return entry.username.toLowerCase().startsWith(username.toLowerCase());
-            });
-            displayEntries(filteredEntries);
-        }
-
-    // Событиядля кнопок сортировки
+        // События для кнопок сортировки
         document.getElementById('sortDescBtn').addEventListener('click', function () {
             sortEntries('desc');
+            filterEntries();
         });
 
         document.getElementById('sortAscBtn').addEventListener('click', function () {
             sortEntries('asc');
+            filterEntries();
         });
 
-        // Обработчик для поля фильтра даты
-        dateFilterInput.addEventListener('change', function () {
-            const selectedDate = dateFilterInput.value;
-            if (selectedDate) {
-                filterEntriesByDate(selectedDate);
-            } else {
-                displayEntries(allEntries);
-            }
-        });
+        // Сортировка записей
+        function sortEntries(order) {
+            allEntries.sort(function (a, b) {
+                return order === 'asc'
+                    ? new Date(a.postedDate) - new Date(b.postedDate)
+                    : new Date(b.postedDate) - new Date(a.postedDate);
+            });
+        }
 
-        // Обработчик для поля фильтра логина
-        usernameFilterInput.addEventListener('input', function () {
-            const username = usernameFilterInput.value;
-            if (username) {
-                filterEntriesByUsername(username);
-            } else {
-                displayEntries(allEntries);
-            }
-        });
+        // Обработчики для фильтров
+        dateFilterInput.addEventListener('change', filterEntries);
+        usernameFilterInput.addEventListener('input', filterEntries);
 
         // Обработчик события для отправки формы
         function answerForUser() {
@@ -312,18 +322,23 @@
             form.addEventListener("submit", function (event) {
                 event.preventDefault();
 
-                var message = document.querySelector("textarea[name='message']").value; // Исправлено
+                var message = document.querySelector("textarea[name='message']").value;
                 var anonymousCheckbox = document.getElementById("anonymousCheckbox");
                 var isAnonymous = anonymousCheckbox.checked;
+
+                let formData = new FormData(form);
+
+                // Добавляем имя пользователя к formData, если анонимная отправка не включена
+                if (!isAnonymous && currentUser) {
+                    formData.append('username', currentUser);
+                }
 
                 let thankYouMessage;
                 if (isAnonymous) {
                     thankYouMessage = "Спасибо! Ваше предложение отправлено анонимно!";
                 } else {
-                    thankYouMessage = `Спасибо, ${currentUser}! Ваше предложение отправлено!`; // Исправлено
+                    thankYouMessage = `Спасибо, ${currentUser || 'Гость'}! Ваше предложение отправлено!`;
                 }
-
-                var formData = new FormData(form);
 
                 fetch(form.action, {
                     method: "POST",
@@ -345,7 +360,7 @@
             });
         }
 
-        // Инициализируем функцию
+        // Инициализируем функцию после загрузки контента
         answerForUser();
     });
 </script>

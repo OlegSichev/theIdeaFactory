@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Страница не найдена</title>
+    <title>Страница не найдена - Фабрика идей</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,6 +14,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            color: #333;
         }
 
         .container {
@@ -22,31 +23,51 @@
             padding: 40px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
+            max-width: 400px;
+            width: 100%;
         }
 
         h1 {
             font-size: 72px;
             color: #444;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 24px;
+            color: #555;
+            margin-bottom: 30px;
         }
 
         p {
             color: #777;
-            font-size: 20px;
+            font-size: 18px;
         }
 
         .home-btn {
-            padding: 10px 20px;
+            padding: 12px 24px;
             text-decoration: none;
             background-color: #007bff;
             color: #fff;
-            border-radius: 5px;
+            border-radius: 6px;
             font-weight: bold;
             margin-top: 20px;
             display: inline-block;
+            transition: background-color 0.3s ease;
         }
 
         .home-btn:hover {
             background-color: #0056b3;
+        }
+
+        .footer {
+            margin-top: 40px;
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .footer b {
+            color: #444;
         }
     </style>
 </head>
@@ -55,6 +76,9 @@
     <h1>404</h1>
     <p>Страница не найдена</p>
     <a href="/" class="home-btn">Вернуться на главную</a>
+    <div class="footer">
+        Powered by <b>Фабрика идей</b> 2024
+    </div>
 </div>
 </body>
 </html>

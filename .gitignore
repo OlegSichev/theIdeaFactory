@@ -37,3 +37,4 @@ build/
 mvnw
 mvnw.cmd
 temp.html
+src/main/resources/uploads/
