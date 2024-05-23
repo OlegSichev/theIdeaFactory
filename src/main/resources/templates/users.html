@@ -137,12 +137,19 @@
       padding: 20px;
     }
   </style>
+  <script type="text/javascript">
+    function redirectToEdit(userId) {
+      console.log(userId);  // Логирование ID пользователя для проверки
+      window.location.href = '/edit_user/' + userId;
+    }
+  </script>
 </head>
 <body>
 <div class="menu">
   <a href="/">Главная страница</a>
   <a href="#">Блог</a>
-  <a href="/users">Обновить</a>
+  <a href="/add_user">Добавить нового пользователя</a>
+  <a href="/users">Обновить список пользователей</a>
   <a href="/theIdeaFactoryIndexAdmin">Администрирование</a>
   <a href="/logout" class="logout-btn">Выход</a>
 </div>
@@ -151,19 +158,17 @@
   <table>
     <thead>
     <tr>
-      <th>Имя</th>
-      <th>Имя пользователя</th>
+      <th>Полное имя</th>
+      <th>Логин</th>
       <th>Эл. почта</th>
-      <th>Пароль</th>
       <th>Роли</th>
     </tr>
     </thead>
     <tbody>
-    <tr th:each="user : ${users}">
-      <td th:text="${user.name}"></td>
+    <tr th:each="user : ${users}" th:ondblclick="'redirectToEdit(' + ${user.id} + ')'">
+      <td th:text="${user.snm}"></td>
       <td th:text="${user.username}"></td>
       <td th:text="${user.email}"></td>
-      <td th:text="${user.password}"></td>
       <td>
         <ul>
           <li th:each="role : ${user.roles}" th:text="${role.name}"></li>

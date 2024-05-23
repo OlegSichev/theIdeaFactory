@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Add User</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      padding-left: 220px; /* Оставляем место для бокового меню */
+    }
+
+    h1 {
+      text-align: center;
+      color: #444;
+      margin-bottom: 20px;
+    }
+
+    .menu {
+      width: 200px;
+      position: fixed;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background: #ddd;
+      padding: 20px;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .menu a {
+      display: block;
+      margin-bottom: 10px;
+      padding: 8px;
+      font-size: 14px;
+      color: #fff;
+      background: #6c757d;
+      border: none;
+      text-align: left;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .menu a.logout-btn {
+      background: #dc3545;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
+
+    form div {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    select {
+      width: calc(100% - 20px); /* Немного уменьшаем ширину */
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      background-color: #007bff;
+    }
+
+    button.logout-btn {
+      background-color: red;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+<h1>Добавление нового пользователя</h1>
+<!-- Уведомление об ошибке -->
+<div th:if="${error}" th:text="${error}" style="color: red;"></div>
+<div class="container">
+  <form th:action="@{/submit_user}" method="post">
+    <!-- Поля формы -->
+    <div class="menu">
+      <a href="/">Главная страница</a>
+      <a href="#">Блог</a>
+      <a href="/add_user">Добавить нового пользователя</a>
+      <a href="/users">Список пользователей</a>
+      <a href="/theIdeaFactoryIndexAdmin">Администрирование</a>
+      <a href="/logout" class="logout-btn">Выход</a>
+    </div>
+    <div>
+      <label for="username">Логин:</label>
+      <input type="text" id="username" name="username" required>
+    </div>
+    <div>
+      <label for="password">Пароль:</label>
+      <input type="password" id="password" name="password" required>
+    </div>
+    <!-- Другие поля формы -->
+    <div>
+      <label for="surname">Фамилия:</label>
+      <input type="text" id="surname" name="surname" required>
+    </div>
+    <div>
+      <label for="name">Имя:</label>
+      <input type="text" id="name" name="name" required>
+    </div>
+    <div>
+      <label for="middle_name">Отчество:</label>
+      <input type="text" id="middle_name" name="middle_name">
+    </div>
+    <div>
+      <label for="snm">ФИО (Полностью):</label>
+      <input type="text" id="snm" name="snm">
+    </div>
+    <div>
+      <label for="snm_in_the_genitive_case">ФИО в родительном падеже:</label>
+      <input type="text" id="snm_in_the_genitive_case" name="snm_in_the_genitive_case">
+    </div>
+    <div>
+      <label for="snm_in_the_dative_case">ФИО в дательном падеже:</label>
+      <input type="text" id="snm_in_the_dative_case" name="snm_in_the_dative_case">
+    </div>
+    <div>
+      <label for="phone_number">Номер телефона:</label>
+      <input type="text" id="phone_number" name="phone_number" required>
+    </div>
+    <div>
+      <label for="work_phone_number">Внутренний рабочий номер телефона:</label>
+      <input type="text" id="work_phone_number" name="work_phone_number">
+    </div>
+    <div>
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+    <div>
+      <label for="position_at_work">Должность:</label>
+      <input type="text" id="position_at_work" name="position_at_work">
+    </div>
+    <div>
+      <label for="roles">Роль пользователя:</label>
+      <select id="roles" name="roles" multiple>
+        <option th:each="role : ${roles}" th:value="${role.id}" th:text="${role.name}"></option>
+      </select>
+    </div>
+    <div>
+      <button type="submit">Добавить пользователя</button>
+    </div>
+  </form>
+</div>
+</body>
+</html>

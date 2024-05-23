@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактировать пользователя</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            padding-left: 220px; /* Оставляем место для бокового меню */
+        }
+
+        h1 {
+            text-align: center;
+            color: #444;
+            margin-bottom: 20px;
+        }
+
+        .menu {
+            width: 200px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: #ddd;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu a {
+            display: block;
+            margin-bottom: 10px;
+            padding: 8px;
+            font-size: 14px;
+            color: #fff;
+            background: #6c757d;
+            border: none;
+            text-align: left;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .menu a.logout-btn {
+            background: #dc3545;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        form div {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        select {
+            width: calc(100% - 20px); /* Немного уменьшаем ширину */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #007bff;
+            margin-bottom: 10px; /* Добавим отступ снизу */
+        }
+
+        button.delete-btn {
+            background-color: #dc3545;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button.delete-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+<div class="menu">
+    <a href="/">Главная страница</a>
+    <a href="#">Блог</a>
+    <a href="/add_user">Добавить нового пользователя</a>
+    <a href="/users">Список пользователей</a>
+    <a href="/theIdeaFactoryIndexAdmin">Администрирование</a>
+    <a href="/logout" class="logout-btn">Выход</a>
+</div>
+
+<div class="container">
+    <h1>Редактировать пользователя</h1>
+    <form th:action="@{/edit_user}" th:object="${user}" method="post">
+        <input type="hidden" name="id" th:value="${user.id}"/>
+
+        <div>
+            <label for="username">Логин</label>
+            <input type="text" id="username" name="username" th:value="${user.username}" class="input-field"/>
+        </div>
+        <div>
+            <label for="surname">Фамилия</label>
+            <input type="text" id="surname" name="surname" th:value="${user.surname}" class="input-field"/>
+        </div>
+        <div>
+            <label for="name">Имя</label>
+            <input type="text" id="name" name="name" th:value="${user.name}" class="input-field"/>
+        </div>
+        <div>
+            <label for="middle_name">Отчество</label>
+            <input type="text" id="middle_name" name="middle_name" th:value="${user.middleName}" class="input-field"/>
+        </div>
+        <div>
+            <label for="snm">Фамилия Имя Отчество</label>
+            <input type="text" id="snm" name="snm" th:value="${user.snm}" class="input-field"/>
+        </div>
+        <div>
+            <label for="snm_in_the_genitive_case">Имя в родительном падеже</label>
+            <input type="text" id="snm_in_the_genitive_case" name="snm_in_the_genitive_case" th:value="${user.snmInTheGenitiveCase}" class="input-field"/>
+        </div>
+        <div>
+            <label for="snm_in_the_dative_case">Имя в дательном падеже</label>
+            <input type="text" id="snm_in_the_dative_case" name="snm_in_the_dative_case" th:value="${user.snmInTheDativeCase}" class="input-field"/>
+        </div>
+        <div>
+            <label for="phone_number">Номер телефона</label>
+            <input type="text" id="phone_number" name="phone_number" th:value="${user.phoneNumber}" class="input-field"/>
+        </div>
+        <div>
+            <label for="work_phone_number">Рабочий номер телефона</label>
+            <input type="text" id="work_phone_number" name="work_phone_number" th:value="${user.workPhoneNumber}" class="input-field"/>
+        </div>
+        <div>
+            <label for="email">Электронная почта</label>
+            <input type="email" id="email" name="email" th:value="${user.email}" class="input-field"/>
+        </div>
+        <div>
+            <label for="position_at_work">Должность</label>
+            <input type="text" id="position_at_work" name="position_at_work" th:value="${user.positionAtWork}" class="input-field"/>
+        </div>
+        <div>
+            <label for="roles">Роли</label>
+            <select id="roles" name="roles" multiple>
+                <option th:each="role : ${allRoles}" th:value="${role.id}" th:text="${role.name}" th:selected="${user.roles.contains(role)}">Role Name</option>
+            </select>
+        </div>
+
+        <button type="submit">Сохранить изменения</button>
+    </form>
+
+    <form th:action="@{/delete_user}" method="post">
+        <input type="hidden" name="id" th:value="${user.id}"/>
+        <button type="submit" class="delete-btn">Удалить пользователя</button>
+    </form>
+</div>
+</body>
+</html>

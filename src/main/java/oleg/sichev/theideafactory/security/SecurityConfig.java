@@ -40,6 +40,8 @@ public class SecurityConfig {
                         .requestMatchers("/theIdeaFactoryIndexAdmin").hasRole("ADMIN")
                         // Доступ к списку пользователей разрешён только для администраторов
                         .requestMatchers("/users/**").hasRole("ADMIN")
+                        .requestMatchers("/add_user").hasRole("ADMIN")
+                        .requestMatchers("/edit_user/**").hasRole("ADMIN")
                         .anyRequest().authenticated() // Все остальные запросы требуют аутентификации
                 )
                 .formLogin(form -> form
