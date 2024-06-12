@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Одобренные посты</title>
+    <script>
+        const userId = 123; // Пример: замените это значением из вашей сессии или другого источника
+
+        function likePost(postId) {
+            fetch(`/${postId}/like?userId=${userId}`, {
+                method: 'POST',
+            })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload(); // Перезагрузите страницу, чтобы показать обновленные лайки
+                    } else {
+                        response.text().then(text => {
+                            console.error('Ошибка при попытке поставить лайк посту с ID: ' + postId + ': ' + text);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при попытке поставить лайк посту с ID: ' + postId, error);
+                });
+        }
+
+        function commentPost(postId) {
+            const commentInput = document.getElementById('comment-input-' + postId);
+            const comment = commentInput.value.trim();
+
+            if (comment === "") {
+                alert("Комментарий не может быть пустым");
+                return;
+            }
+
+            fetch('/' + postId + '/comment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: comment
+            })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload(); // Перезагрузите страницу, чтобы показать новый комментарий
+                    } else {
+                        console.error('Ошибка при попытке оставить комментарий для поста с ID: ' + postId);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при попытке оставить комментарий для поста с ID: ' + postId, error);
+                });
+        }
+    </script>
+</head>
+
+<body>
+<h1>Одобренные посты</h1>
+<div>
+    <ul>
+        <th:block th:each="post : ${posts}">
+            <li>
+                <p><strong>Текст поста:</strong> <span th:text="${post.message}"></span></p>
+                <p><strong>Категория:</strong> <span th:text="${post.category.name}"></span></p>
+                <p><strong>Дата и время опубликования:</strong> <span th:text="${post.postedDate}"></span></p>
+                <p><strong>Статус:</strong> <span th:text="${post.approved ? 'Одобрено' : 'Не одобрено'}"></span></p>
+                <p><strong>Лайки:</strong> <span th:text="${post.likes}"></span></p>
+                <p><strong>Комментарии:</strong></p>
+                <ul>
+                    <th:block th:each="comment : ${post.comments}">
+                        <li th:text="${#strings.isEmpty(comment.message) ? comment : comment.message}"></li>
+                    </th:block>
+                </ul>
+                <p>
+                    <button th:onclick="'likePost(' + ${post.id} + ')'">Лайк</button>
+                    <input type="text" th:id="'comment-input-' + ${post.id}" placeholder="Комментарий">
+                    <button th:onclick="'commentPost(' + ${post.id} + ')'">Оставить комментарий</button>
+                </p>
+            </li>
+        </th:block>
+    </ul>
+</div>
+</body>
+
+</html>

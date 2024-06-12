@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/users/**").hasRole("ADMIN")
                         .requestMatchers("/add_user").hasRole("ADMIN")
                         .requestMatchers("/edit_user/**").hasRole("ADMIN")
+                        //.requestMatchers("/answer/**").hasRole("ADMIN")
                         .anyRequest().authenticated() // Все остальные запросы требуют аутентификации
                 )
                 .formLogin(form -> form

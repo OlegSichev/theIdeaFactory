@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <title>Список пользователей</title>
@@ -136,11 +136,45 @@
       margin-left: 220px;
       padding: 20px;
     }
+
+    /* Оформление для поля поиска */
+    .search-container {
+      margin-bottom: 20px;
+    }
+
+    .search-container input {
+      width: calc(100% - 20px);
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
   </style>
   <script type="text/javascript">
+    // Функция для редиректа на страницу редактирования пользователя
     function redirectToEdit(userId) {
-      console.log(userId);  // Логирование ID пользователя для проверки
+      console.log(userId); // Логирование ID пользователя для проверки
       window.location.href = '/edit_user/' + userId;
+    }
+
+    // Функция для фильтрации пользователей по логину
+    function filterUsers() {
+      const filter = document.getElementById('searchInput').value.toUpperCase();
+      const table = document.getElementById('userTable');
+      const tr = table.getElementsByTagName('tr');
+
+      for (let i = 1; i < tr.length; i++) {
+        const td = tr[i].getElementsByTagName('td')[1]; // Индекс 1 соответствует столбцу "Логин"
+        if (td) {
+          const txtValue = td.textContent || td.innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            tr[i].style.display = '';
+          } else {
+            tr[i].style.display = 'none';
+          }
+        }
+      }
     }
   </script>
 </head>
@@ -155,7 +189,13 @@
 </div>
 <div class="container-table">
   <h1>Список пользователей</h1>
-  <table>
+
+  <div class="search-container">
+    <!-- Поле для поиска -->
+    <input type="text" id="searchInput" onkeyup="filterUsers()" placeholder="Поиск по логину..." class="input-field">
+  </div>
+
+  <table id="userTable">
     <thead>
     <tr>
       <th>Полное имя</th>

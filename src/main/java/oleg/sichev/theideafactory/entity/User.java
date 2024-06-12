@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -16,16 +17,19 @@ public class User {
     private String name;
     private String surname;
     private String middleName; // Отчество
-    private String snm; // name + surname + middleName = nsm
+    private String snm; // name + surname + middleName = snm
     private String snmInTheGenitiveCase; // Имя в родительном падеже
     private String snmInTheDativeCase; // Имя в дательном падеже
     private String phoneNumber;
     private String workPhoneNumber;
     private String positionAtWork;
+
     @Column(nullable = false, unique = true)
     private String username;
+
     @Column(nullable = false, unique = true)
     private String email;
+
     @Column(nullable = false)
     private String password;
 
@@ -37,6 +41,11 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Like> likes = new HashSet<>();
+
+    // Геттеры и сеттеры
 
     public Integer getId() {
         return id;
@@ -148,5 +157,13 @@ public class User {
 
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
+    }
+
+    public Set<Like> getLikes() {
+        return likes;
+    }
+
+    public void setLikes(Set<Like> likes) {
+        this.likes = likes;
     }
 }

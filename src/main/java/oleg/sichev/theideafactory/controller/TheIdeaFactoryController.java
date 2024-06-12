@@ -1,10 +1,13 @@
 package oleg.sichev.theideafactory.controller;
 
 import oleg.sichev.theideafactory.entity.TheIdeaFactoryEntity;
+import oleg.sichev.theideafactory.repository.TheIdeaFactoryRepository;
+import oleg.sichev.theideafactory.service.LikeService;
 import oleg.sichev.theideafactory.service.TheIdeaFactoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -13,12 +16,19 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 public class TheIdeaFactoryController {
 
     @Autowired
     private TheIdeaFactoryService theIdeaFactoryService;
+
+    @Autowired
+    private TheIdeaFactoryRepository theIdeaFactoryRepository;
+
+    @Autowired
+    private LikeService likeService;
 
     @GetMapping("/theIdeaFactoryIndex")
     public String showGuestBook(Model model) {
@@ -57,4 +67,105 @@ public class TheIdeaFactoryController {
     public String currentUserName(Authentication authentication) {
         return authentication != null ? authentication.getName() : "";
     }
+
+    @GetMapping("/answer")
+    public String showAnswerPage(@RequestParam Long id, Model model, Authentication authentication) {
+        Optional<TheIdeaFactoryEntity> post = theIdeaFactoryService.findById(id);
+        if (post.isPresent()) {
+            model.addAttribute("post", post.get());
+            if (authentication != null && authentication.isAuthenticated()) {
+                model.addAttribute("authenticatedUser", authentication.getName());
+            }
+            return "answer"; // answer.html
+        }
+        return "redirect:/theIdeaFactoryIndex"; // Пост не найден, редирект на главную страницу
+    }
+
+    @PostMapping("/answer")
+    public String addAnswer(@RequestParam Long postId, @RequestParam String answer, @RequestParam String answeredBy, RedirectAttributes redirectAttributes) {
+        try {
+            theIdeaFactoryService.addAnswer(postId, answer, answeredBy);
+            redirectAttributes.addFlashAttribute("message", "Ответ успешно добавлен!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("message", "Ошибка при добавлении ответа.");
+        }
+        return "redirect:/theIdeaFactoryIndex";
+    }
+
+    @PostMapping("/editPost")
+    public String editPost(@RequestParam long postId, @RequestParam String username, @RequestParam String message) {
+        theIdeaFactoryService.editPost(postId, username, message);
+        return "redirect:/theIdeaFactoryIndexAdmin";
+    }
+
+    @PostMapping("/deletePost")
+    public String deletePost(@RequestParam long postId) {
+        theIdeaFactoryService.deletePost(postId);
+        return "redirect:/theIdeaFactoryIndexAdmin";
+    }
+
+    @PostMapping("/approvePost")
+    public String approvePost(@RequestParam long postId, @RequestParam boolean approved) {
+        theIdeaFactoryService.approvePost(postId, approved);
+        return "redirect:/theIdeaFactoryIndexAdmin";
+    }
+
+    @GetMapping("/news")
+    public String getApprovedPosts(Model model) {
+        List<TheIdeaFactoryEntity> approvedPosts = theIdeaFactoryService.findApprovedPosts();
+        model.addAttribute("posts", approvedPosts);
+        return "news";
+    }
+
+//    @PostMapping("/{id}/like")
+//    @ResponseBody
+//    public ResponseEntity<String> likeEntry(@PathVariable Long id) {
+//        Optional<TheIdeaFactoryEntity> entityOptional = theIdeaFactoryRepository.findById(id);
+//        if (entityOptional.isPresent()) {
+//            TheIdeaFactoryEntity entity = entityOptional.get();
+//            entity.setLikes(entity.getLikes() + 1);
+//            theIdeaFactoryRepository.save(entity);
+//            return ResponseEntity.ok("Post liked successfully");
+//        }
+//        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found");
+//    }
+
+    @PostMapping("/{entryId}/like")
+    public ResponseEntity<String> likePost(@PathVariable long entryId, @RequestParam Integer userId) {
+        if (likeService.likePost(entryId, userId)) {
+            return ResponseEntity.ok("Post liked");
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("User has already liked this post");
+        }
+    }
+
+    @PostMapping("/{id}/comment")
+    @ResponseBody
+    public ResponseEntity<String> commentEntry(@PathVariable Long id, @RequestBody String comment) {
+        // Проверка на пустой комментарий
+        if (comment == null || comment.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Comment cannot be empty");
+        }
+
+        // Поиск поста по ID
+        Optional<TheIdeaFactoryEntity> entityOptional = theIdeaFactoryRepository.findById(id);
+        if (entityOptional.isPresent()) {
+            TheIdeaFactoryEntity entity = entityOptional.get();
+            entity.getComments().add(comment); // Добавление комментария
+            theIdeaFactoryRepository.save(entity); // Сохранение изменений
+            return ResponseEntity.ok("Comment added successfully");
+        }
+
+        // Обработка случая, если пост не найден
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found");
+    }
+
+
+    @GetMapping("/entries-with-comments")
+    @ResponseBody
+    public List<TheIdeaFactoryEntity> getAllEntriesWithComments() {
+        return theIdeaFactoryService.getAllEntriesWithComments();
+    }
+
 }

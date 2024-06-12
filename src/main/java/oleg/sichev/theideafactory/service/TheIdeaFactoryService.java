@@ -1,5 +1,4 @@
 package oleg.sichev.theideafactory.service;
-
 import oleg.sichev.theideafactory.entity.File;
 import oleg.sichev.theideafactory.entity.TheIdeaFactoryEntity;
 import oleg.sichev.theideafactory.repository.FileRepository;
@@ -13,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TheIdeaFactoryService {
@@ -58,5 +58,49 @@ public class TheIdeaFactoryService {
 
             fileRepository.save(file);
         }
+    }
+
+    public List<TheIdeaFactoryEntity> findByCategory(Long categoryId) {
+        return theIdeaFactoryRepository.findByCategory_Id(categoryId);
+    }
+
+    public Optional<TheIdeaFactoryEntity> findById(Long id) {
+        return theIdeaFactoryRepository.findById(id);
+    }
+
+    public TheIdeaFactoryEntity addAnswer(Long postId, String answer, String answeredBy) {
+        Optional<TheIdeaFactoryEntity> postOptional = theIdeaFactoryRepository.findById(postId);
+        if (postOptional.isPresent()) {
+            TheIdeaFactoryEntity post = postOptional.get();
+            String fullAnswer = answeredBy + ": " + answer;
+            post.setAnswer(fullAnswer);  // Сохраняем ответ вместе с информацией о пользователе
+            return theIdeaFactoryRepository.save(post);
+        }
+        throw new IllegalArgumentException("Post not found with ID: " + postId);
+    }
+
+    public void editPost(long postId, String username, String message) {
+        TheIdeaFactoryEntity post = theIdeaFactoryRepository.findById(postId).orElseThrow(() -> new IllegalArgumentException("Invalid post Id:" + postId));
+        post.setUsername(username);
+        post.setMessage(message);
+        theIdeaFactoryRepository.save(post);
+    }
+
+    public void deletePost(long postId) {
+        theIdeaFactoryRepository.deleteById(postId);
+    }
+
+    public void approvePost(long postId, boolean approved) {
+        TheIdeaFactoryEntity post = theIdeaFactoryRepository.findById(postId).orElseThrow(() -> new IllegalArgumentException("Invalid post Id:" + postId));
+        post.setApproved(approved);
+        theIdeaFactoryRepository.save(post);
+    }
+
+    public List<TheIdeaFactoryEntity> findApprovedPosts() {
+        return theIdeaFactoryRepository.findByApproved(true);
+    }
+
+    public List<TheIdeaFactoryEntity> getAllEntriesWithComments() {
+        return theIdeaFactoryRepository.findAllEntriesWithComments();
     }
 }
