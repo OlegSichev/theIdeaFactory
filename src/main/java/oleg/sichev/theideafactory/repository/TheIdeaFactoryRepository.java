@@ -11,6 +11,9 @@ import java.util.List;
 public interface TheIdeaFactoryRepository extends JpaRepository<TheIdeaFactoryEntity, Long> {
     List<TheIdeaFactoryEntity> findByCategory_Id(Long categoryId);
     List<TheIdeaFactoryEntity> findByApproved(boolean approved);
+    List<TheIdeaFactoryEntity> findByIsDeletedFalse();
+
+    List<TheIdeaFactoryEntity> findByIsDeletedTrue();
 
     @Query("SELECT e FROM TheIdeaFactoryEntity e LEFT JOIN FETCH e.comments")
     List<TheIdeaFactoryEntity> findAllEntriesWithComments();

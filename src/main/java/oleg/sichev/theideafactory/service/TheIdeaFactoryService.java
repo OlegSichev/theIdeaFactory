@@ -64,6 +64,10 @@ public class TheIdeaFactoryService {
         return theIdeaFactoryRepository.findByCategory_Id(categoryId);
     }
 
+    public List<TheIdeaFactoryEntity> getActivePosts() {
+        return theIdeaFactoryRepository.findByIsDeletedFalse();
+    }
+
     public Optional<TheIdeaFactoryEntity> findById(Long id) {
         return theIdeaFactoryRepository.findById(id);
     }
@@ -98,6 +102,10 @@ public class TheIdeaFactoryService {
 
     public List<TheIdeaFactoryEntity> findApprovedPosts() {
         return theIdeaFactoryRepository.findByApproved(true);
+    }
+
+    public List<TheIdeaFactoryEntity> getDeletedPosts() {
+        return theIdeaFactoryRepository.findByIsDeletedTrue();
     }
 
     public List<TheIdeaFactoryEntity> getAllEntriesWithComments() {

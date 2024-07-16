@@ -186,8 +186,16 @@
 <body>
 <div class="menu">
     <button onclick="location.href='/'">Главная страница</button>
+    <button onclick="location.href='/theIdeaFactoryIndex'">
+        <span th:text="${isAdmin} ? 'Мои идеи (Пользовательская страница)' : 'Мои идеи'"></span>
+    </button>
     <button disabled>Блог</button>
-    <button class="admin-btn" onclick="location.href='/theIdeaFactoryIndexAdmin'">Администрирование</button>
+    <div th:if="${isAdmin}">
+        <button class="admin-btn" onclick="location.href='/ideasForModeration'">Идеи на модерации</button>
+    </div>
+    <div th:if="${isAdmin}">
+        <button class="admin-btn" onclick="location.href='/theIdeaFactoryIndexAdmin'">Все идеи (Администрирование)</button>
+    </div>
     <button class="logout-btn" onclick="location.href='/logout'">Выход</button>
 </div>
 
@@ -195,7 +203,7 @@
     <h2>Фабрика идей</h2>
     <div id="username" class="title"></div>
     <form id="ideaForm" th:action="@{/theIdeaFactoryIndex}" method="post" enctype="multipart/form-data">
-        <textarea class="input-field" name="message" placeholder="Ваше предложение"></textarea>
+        <textarea class="input-field" name="message" placeholder="Ваша идея"></textarea>
         <label><input type="checkbox" id="anonymousCheckbox"> Анонимно</label>
         <br><br>
         <label for="fileUpload">Прикрепить файл:</label>
@@ -337,7 +345,6 @@
 
 // Пример загрузки записей и категорий
         var entries = []; // Глобальная переменная для хранения записей
-
         function loadEntries() {
             // Предполагается, что вы получаете данные из API
             fetch('/categories')
@@ -450,6 +457,21 @@
                 dateParagraph.innerHTML = '<strong>Опубликовано:</strong> ' + date.toLocaleString();
                 metadataDiv.appendChild(dateParagraph);
 
+                // Если запись удалена, отображаем это
+                if (entry.deleted) {
+                    const deletedParagraph = document.createElement('p');
+                    const strongElement = document.createElement('strong');
+                    strongElement.style.color = 'red';
+                    strongElement.textContent = 'Удаленный пост';
+                    strongElement.style.border = '3px solid red'; // Увеличили толщину рамки
+                    strongElement.style.padding = '3px'; // Добавили внутренний отступ
+                    deletedParagraph.style.textAlign = 'right';
+                    deletedParagraph.appendChild(strongElement);
+                    metadataDiv.appendChild(deletedParagraph);
+                }
+
+
+
                 // Добавляем элементы в контейнер
                 entryDiv.appendChild(nameParagraph);
                 entryDiv.appendChild(messageParagraph);
@@ -458,6 +480,10 @@
 
                 // Добавляем заполненную запись в контейнер для записей
                 entriesContainer.appendChild(entryDiv);
+
+                entryDiv.addEventListener('dblclick', function () {
+                    window.location.href = '/editIdea?id=' + entry.id;
+                })
             });
         }
 

@@ -24,6 +24,9 @@ public class TheIdeaFactoryEntity {
     @Column(name = "approved", nullable = false)
     private boolean approved;
 
+    @Column(name = "isDeleted", nullable = false)
+    private boolean isDeleted;
+
     @Temporal(TemporalType.TIMESTAMP)
     private Date postedDate = new Date();
 
@@ -105,6 +108,14 @@ public class TheIdeaFactoryEntity {
 
     public void setApproved(boolean approved) {
         this.approved = approved;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean isDeleted) {
+        this.isDeleted = isDeleted;
     }
 
     public Set<Like> getLikes() {

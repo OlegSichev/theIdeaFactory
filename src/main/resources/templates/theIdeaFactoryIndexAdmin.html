@@ -185,18 +185,20 @@
 </head>
 <body>
 <div class="menu">
-    <button onclick="location.href='/'">Главная страница</button>
+    <button onclick="location.href='/news'">Главная страница</button>
+    <button onclick="location.href='/theIdeaFactoryIndex'">Мои идеи (Пользовательская страница)</button>
     <button disabled>Блог</button>
     <button class="users-btn" onclick="location.href='/users'">Список пользователей</button>
-    <button class="users-btn" onclick="location.href='/theIdeaFactoryIndex'">Пользовательская страница</button>
+    <button class="users-btn" onclick="location.href='/ideasForModeration'">Идеи на модерации</button>
+    <button class="users-btn" onclick="location.href='/theIdeaFactoryIndexAdmin'">Все идеи (Администрирование)</button>
     <button class="logout-btn" onclick="location.href='/logout'">Выход</button>
 </div>
 
 <div class="container">
     <h2>Фабрика идей</h2>
     <div id="username" class="title"></div>
-    <form id="ideaForm" th:action="@{/theIdeaFactoryIndex}" method="post" enctype="multipart/form-data">
-        <textarea class="input-field" name="message" placeholder="Ваше предложение"></textarea>
+    <form id="ideaForm" th:action="@{/admin/theIdeaFactoryIndexAdmin}" method="post" enctype="multipart/form-data">
+        <textarea class="input-field" name="message" placeholder="Ваша идея"></textarea>
         <label><input type="checkbox" id="anonymousCheckbox"> Анонимно</label>
         <br><br>
         <label for="fileUpload">Прикрепить файл:</label>
@@ -218,11 +220,11 @@
             <input type="date" id="dateFilter" class="filter-input">
         </div>
 
-        <!-- Новый dropdown для фильтрации по категории -->
         <div class="filter-container">
             <label for="categoryFilter">Фильтр по категории:</label>
             <select id="categoryFilter">
                 <option value="">Все категории</option>
+                <option th:each="category : ${categories}" th:value="${category.id}" th:text="${category.name}"></option>
             </select>
         </div>
 
@@ -376,93 +378,96 @@
 
             entries.forEach(function (entry) {
                 // Создаем основной div для записи
+
                 const entryDiv = document.createElement('div');
                 entryDiv.className = 'entry';
                 entryDiv.style.borderBottom = "1px solid #ccc";
                 entryDiv.style.paddingBottom = "10px";
                 entryDiv.style.marginBottom = "20px";
 
-                // Отображаем имя пользователя
-                const nameParagraph = document.createElement('p');
-                nameParagraph.innerHTML = '<strong style="font-weight: 600; font-size: 135%;">' + entry.username + '</strong>';
+                if (!entry.deleted) {
+                    // Отображаем имя пользователя
+                    const nameParagraph = document.createElement('p');
+                    nameParagraph.innerHTML = '<strong style="font-weight: 600; font-size: 135%;">' + entry.username + '</strong>';
 
-                // Отображаем сообщение
-                const messageParagraph = document.createElement('p');
-                messageParagraph.innerHTML = '<strong>Сообщение:</strong> ' + entry.message;
+                    // Отображаем сообщение
+                    const messageParagraph = document.createElement('p');
+                    messageParagraph.innerHTML = '<strong>Сообщение:</strong> ' + entry.message;
 
-                // Создаем разделитель
-                const divider = document.createElement('hr');
-                divider.style.border = "none";
-                divider.style.borderTop = "1px solid rgba(0, 0, 0, 0.1)";
-                divider.style.margin = "10px 0";
+                    // Создаем разделитель
+                    const divider = document.createElement('hr');
+                    divider.style.border = "none";
+                    divider.style.borderTop = "1px solid rgba(0, 0, 0, 0.1)";
+                    divider.style.margin = "10px 0";
 
-                // Создаем div для метаданных
-                const metadataDiv = document.createElement('div');
-                metadataDiv.style.border = "1px solid #ddd";
-                metadataDiv.style.padding = "10px";
-                metadataDiv.style.backgroundColor = "#f9f9f9";
-                metadataDiv.style.marginTop = "10px";
+                    // Создаем div для метаданных
+                    const metadataDiv = document.createElement('div');
+                    metadataDiv.style.border = "1px solid #ddd";
+                    metadataDiv.style.padding = "10px";
+                    metadataDiv.style.backgroundColor = "#f9f9f9";
+                    metadataDiv.style.marginTop = "10px";
 
-                // Отображаем категорию
-                const categoryParagraph = document.createElement('p');
-                categoryParagraph.innerHTML = '<strong>Категория:</strong> ' + (entry.category && entry.category.name ? entry.category.name : 'Неизвестная категория');
+                    // Отображаем категорию
+                    const categoryParagraph = document.createElement('p');
+                    categoryParagraph.innerHTML = '<strong>Категория:</strong> ' + (entry.category && entry.category.name ? entry.category.name : 'Неизвестная категория');
 
-                // Отображаем статус
-                const approvalParagraph = document.createElement('p');
-                approvalParagraph.innerHTML = '<strong>Статус: </strong>' + (entry.approved ? 'Одобрен' : 'Не одобрен');
+                    // Отображаем статус
+                    const approvalParagraph = document.createElement('p');
+                    approvalParagraph.innerHTML = '<strong>Статус: </strong>' + (entry.approved ? 'Одобрен' : 'Не одобрен');
 
-                // Если есть ответ на сообщение, отображаем его
-                if (entry.answer) {
-                    const answerParagraph = document.createElement('p');
-                    answerParagraph.innerHTML = entry.answer.includes(':')
-                        ? `<strong>Ответ от ${entry.answer.split(':')[0].trim()}</strong>: ${entry.answer.split(':')[1].trim()}`
-                        : `<strong>Ответ:</strong> ${entry.answer}`;
-                    metadataDiv.appendChild(answerParagraph);
+                    // Если есть ответ на сообщение, отображаем его
+                    if (entry.answer) {
+                        const answerParagraph = document.createElement('p');
+                        answerParagraph.innerHTML = entry.answer.includes(':')
+                            ? `<strong>Ответ от ${entry.answer.split(':')[0].trim()}</strong>: ${entry.answer.split(':')[1].trim()}`
+                            : `<strong>Ответ:</strong> ${entry.answer}`;
+                        metadataDiv.appendChild(answerParagraph);
+                    }
+
+                    // Если есть прикрепленные файлы, отображаем их
+                    if (entry.files && entry.files.length > 0) {
+                        const filesParagraph = document.createElement('p');
+                        filesParagraph.innerHTML = '<strong><u>Прикрепленные файлы:</u></strong>';
+
+                        const filesList = document.createElement('ul');
+                        entry.files.forEach(function (file) {
+                            const fileLink = document.createElement('a');
+                            fileLink.href = file.filePath;
+                            fileLink.textContent = file.fileName;
+                            fileLink.download = file.fileName;
+
+                            const fileItem = document.createElement('li');
+                            fileItem.appendChild(fileLink);
+                            filesList.appendChild(fileItem);
+                        });
+
+                        metadataDiv.appendChild(filesParagraph);
+                        metadataDiv.appendChild(filesList);
+                    }
+
+                    // Добавляем метаданные в основное содержимое записи
+                    metadataDiv.appendChild(categoryParagraph);
+                    metadataDiv.appendChild(approvalParagraph);
+
+                    // Отображаем дату публикации внизу
+                    const dateParagraph = document.createElement('p');
+                    const date = new Date(entry.postedDate);
+                    dateParagraph.innerHTML = '<strong>Опубликовано:</strong> ' + date.toLocaleString();
+                    metadataDiv.appendChild(dateParagraph);
+
+                    // Добавляем элементы в контейнер
+                    entryDiv.appendChild(nameParagraph);
+                    entryDiv.appendChild(messageParagraph);
+                    entryDiv.appendChild(divider); // Добавляем разделитель
+                    entryDiv.appendChild(metadataDiv);
+
+                    // Добавляем заполненную запись в контейнер для записей
+                    entriesContainer.appendChild(entryDiv);
                 }
-
-                // Если есть прикрепленные файлы, отображаем их
-                if (entry.files && entry.files.length > 0) {
-                    const filesParagraph = document.createElement('p');
-                    filesParagraph.innerHTML = '<strong><u>Прикрепленные файлы:</u></strong>';
-
-                    const filesList = document.createElement('ul');
-                    entry.files.forEach(function (file) {
-                        const fileLink = document.createElement('a');
-                        fileLink.href = file.filePath;
-                        fileLink.textContent = file.fileName;
-                        fileLink.download = file.fileName;
-
-                        const fileItem = document.createElement('li');
-                        fileItem.appendChild(fileLink);
-                        filesList.appendChild(fileItem);
-                    });
-
-                    metadataDiv.appendChild(filesParagraph);
-                    metadataDiv.appendChild(filesList);
-                }
-
-                // Добавляем метаданные в основное содержимое записи
-                metadataDiv.appendChild(categoryParagraph);
-                metadataDiv.appendChild(approvalParagraph);
-
-                // Отображаем дату публикации внизу
-                const dateParagraph = document.createElement('p');
-                const date = new Date(entry.postedDate);
-                dateParagraph.innerHTML = '<strong>Опубликовано:</strong> ' + date.toLocaleString();
-                metadataDiv.appendChild(dateParagraph);
-
-                // Добавляем элементы в контейнер
-                entryDiv.appendChild(nameParagraph);
-                entryDiv.appendChild(messageParagraph);
-                entryDiv.appendChild(divider); // Добавляем разделитель
-                entryDiv.appendChild(metadataDiv);
-
-                // Добавляем заполненную запись в контейнер для записей
-                entriesContainer.appendChild(entryDiv);
 
                 // Добавляем событие для перенаправления по двойному клику
                 entryDiv.addEventListener('dblclick', function () {
-                    window.location.href = '/answer?id=' + entry.id;
+                    window.location.href = '/admin/answer?id=' + entry.id;
                 });
             });
         }

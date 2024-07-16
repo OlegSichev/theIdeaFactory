@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,10 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,6 +36,14 @@ public class TheIdeaFactoryAdminController {
 
     @Autowired
     private LikeService likeService;
+
+    @GetMapping("/search") //Поиск по категории. Но он так же не работает, поэтому нужен ли этот метод или
+    // его стоит удалить/переписать - хз. Если его удалить сейчас - ничего не сломается
+    public String searchByCategory(@RequestParam("categoryId") Long categoryId, Model model) {
+        List<TheIdeaFactoryEntity> ideas = theIdeaFactoryService.findByCategory(categoryId);
+        model.addAttribute("ideas", ideas);
+        return "theIdeaFactoryIndexAdmin";
+    }
 
     @GetMapping("/theIdeaFactoryIndexAdmin")
     public String showAdminGuestBook(Model model) {
@@ -47,15 +61,46 @@ public class TheIdeaFactoryAdminController {
         if (authentication != null && authentication.isAuthenticated()) {
             theIdeaFactoryEntity.setUsername(authentication.getName()); // устанавливаем имя пользователя из аутентификации
         }
+
         try {
-            theIdeaFactoryService.save(theIdeaFactoryEntity, files);
-            redirectAttributes.addFlashAttribute("message", "Пост и файлы успешно загружены!");
+            boolean hasFiles = false;
+
+            // Проверка на наличие файлов и их содержимого
+            if (files != null && !files.isEmpty()) {
+                for (MultipartFile file : files) {
+                    if (!file.isEmpty()) {
+                        hasFiles = true;
+                        break;
+                    }
+                }
+            }
+
+            if (hasFiles) {
+                // Создание директории, если она не существует
+                Path uploadsDir = Paths.get("src", "main", "resources", "uploads");
+                if (!Files.exists(uploadsDir)) {
+                    Files.createDirectories(uploadsDir);
+                }
+                // Проверка прав доступа к директории
+                if (!Files.isWritable(uploadsDir)) {
+                    // Обработайте ошибку: у вас нет прав на запись в эту папку.
+                    throw new IOException("Нет прав на запись в директорию 'uploads'");
+                }
+                // Сохранение поста и файлов
+                theIdeaFactoryService.save(theIdeaFactoryEntity, files);
+                redirectAttributes.addFlashAttribute("message", "Пост и файлы успешно загружены!");
+            } else {
+                // Сохранение только поста
+                theIdeaFactoryService.save(theIdeaFactoryEntity); // Используем метод save без файлов
+                redirectAttributes.addFlashAttribute("message", "Пост успешно загружен!");
+            }
         } catch (IOException e) {
             e.printStackTrace();
             redirectAttributes.addFlashAttribute("message", "Ошибка при загрузке поста или файлов.");
         }
         return "redirect:/admin/theIdeaFactoryIndexAdmin";
     }
+
 
     @GetMapping("/getEntriesFromDatabase")
     @ResponseBody
@@ -86,30 +131,57 @@ public class TheIdeaFactoryAdminController {
     public String addAnswer(@RequestParam Long postId, @RequestParam String answer, @RequestParam String answeredBy, RedirectAttributes redirectAttributes) {
         try {
             theIdeaFactoryService.addAnswer(postId, answer, answeredBy);
-            redirectAttributes.addFlashAttribute("message", "Ответ успешно добавлен!");
+            redirectAttributes.addFlashAttribute("successMessage", "Ответ успешно добавлен!");
         } catch (Exception e) {
             e.printStackTrace();
-            redirectAttributes.addFlashAttribute("message", "Ошибка при добавлении ответа.");
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при добавлении ответа.");
         }
         return "redirect:/admin/theIdeaFactoryIndexAdmin";
     }
 
     @PostMapping("/editPost")
-    public String editPost(@RequestParam long postId, @RequestParam String username, @RequestParam String message) {
-        theIdeaFactoryService.editPost(postId, username, message);
-        return "redirect:/theIdeaFactoryIndexAdmin";
+    public String editPost(@RequestParam long postId, @RequestParam String username, @RequestParam String message, RedirectAttributes redirectAttributes) {
+        try {
+            theIdeaFactoryService.editPost(postId, username, message);
+            redirectAttributes.addFlashAttribute("successMessage", "Пост успешно обновлен!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при редактировании поста.");
+        }
+        return "redirect:/admin/theIdeaFactoryIndexAdmin";
     }
 
     @PostMapping("/deletePost")
-    public String deletePost(@RequestParam long postId) {
-        theIdeaFactoryService.deletePost(postId);
-        return "redirect:/theIdeaFactoryIndexAdmin";
+    public String deletePost(@RequestParam long postId, RedirectAttributes redirectAttributes) {
+        Optional<TheIdeaFactoryEntity> postOpt = theIdeaFactoryRepository.findById(postId);
+
+        if (postOpt.isPresent()) {
+            try {
+                TheIdeaFactoryEntity post = postOpt.get();
+                post.setDeleted(true); // Устанавливаем deleted в true
+                theIdeaFactoryRepository.save(post); // Сохраняем изменения в базе данных
+                redirectAttributes.addFlashAttribute("successMessage", "Пост успешно помечен как удалённый!");
+            } catch (Exception e) {
+                e.printStackTrace();
+                redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при пометке поста как удалённого.");
+            }
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Пост не найден.");
+        }
+        return "redirect:/admin/theIdeaFactoryIndexAdmin";
     }
 
+
     @PostMapping("/approvePost")
-    public String approvePost(@RequestParam long postId, @RequestParam boolean approved) {
-        theIdeaFactoryService.approvePost(postId, approved);
-        return "redirect:/theIdeaFactoryIndexAdmin";
+    public String approvePost(@RequestParam long postId, @RequestParam boolean approved, RedirectAttributes redirectAttributes) {
+        try {
+            theIdeaFactoryService.approvePost(postId, approved);
+            redirectAttributes.addFlashAttribute("successMessage", "Пост успешно обновлен!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при обновлении поста.");
+        }
+        return "redirect:/admin/theIdeaFactoryIndexAdmin";
     }
 
     @GetMapping("/news")

@@ -77,6 +77,12 @@
       border-radius: 5px;
     }
 
+    .error-msg {
+      color: red;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
     button {
       width: 100%;
       padding: 10px;
@@ -96,6 +102,92 @@
       background-color: #0056b3;
     }
   </style>
+  <script>
+    function updateFullName() {
+      const surname = document.getElementById('surname').value.trim();
+      const name = document.getElementById('name').value.trim();
+      const middleName = document.getElementById('middle_name').value.trim();
+
+      const fullName = `${surname} ${name} ${middleName}`.trim();
+      document.getElementById('snm').value = fullName;
+    }
+
+    async function checkUsernameAvailability(username) {
+      const response = await fetch(`/check_username?username=${username}`);
+      const data = await response.json();
+      return data.available;
+    }
+
+    function validateForm(event) {
+      const fields = [
+        'middle_name',
+        'snm_in_the_genitive_case',
+        'snm_in_the_dative_case',
+        'phone_number',
+        'work_phone_number',
+        'email'
+      ];
+
+      fields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field.value.trim() === '') {
+          field.removeAttribute('name'); // remove field from form submission if empty
+        }
+      });
+
+      const requiredFields = [
+        'username',
+        'password',
+        'surname',
+        'name',
+        'position_at_work'
+      ];
+
+      let formValid = true;
+      requiredFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field.value.trim() === '') {
+          formValid = false;
+          field.style.borderColor = 'red';
+        } else {
+          field.style.borderColor = '';
+        }
+      });
+
+      if (!formValid) {
+        event.preventDefault();
+        alert('Пожалуйста, заполните все обязательные поля.');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+      const surnameField = document.getElementById('surname');
+      const nameField = document.getElementById('name');
+      const middleNameField = document.getElementById('middle_name');
+      const usernameField = document.getElementById('username');
+      const usernameError = document.getElementById('username-error');
+
+      surnameField.addEventListener('input', updateFullName);
+      nameField.addEventListener('input', updateFullName);
+      middleNameField.addEventListener('input', updateFullName);
+
+      usernameField.addEventListener('input', async () => {
+        const username = usernameField.value.trim();
+        if (username.length > 0) {
+          const available = await checkUsernameAvailability(username);
+          if (!available) {
+            usernameError.textContent = "Пользователь с таким логином уже существует, придумайте другой логин!";
+          } else {
+            usernameError.textContent = "";
+          }
+        } else {
+          usernameError.textContent = "";
+        }
+      });
+
+      document.querySelector('form').addEventListener('submit', validateForm);
+    });
+  </script>
 </head>
 <body>
 <h1>Добавление нового пользователя</h1>
@@ -115,12 +207,12 @@
     <div>
       <label for="username">Логин:</label>
       <input type="text" id="username" name="username" required>
+      <div id="username-error" class="error-msg"></div>
     </div>
     <div>
       <label for="password">Пароль:</label>
       <input type="password" id="password" name="password" required>
     </div>
-    <!-- Другие поля формы -->
     <div>
       <label for="surname">Фамилия:</label>
       <input type="text" id="surname" name="surname" required>
@@ -135,7 +227,7 @@
     </div>
     <div>
       <label for="snm">ФИО (Полностью):</label>
-      <input type="text" id="snm" name="snm">
+      <input type="text" id="snm" name="snm" readonly>
     </div>
     <div>
       <label for="snm_in_the_genitive_case">ФИО в родительном падеже:</label>
@@ -147,7 +239,7 @@
     </div>
     <div>
       <label for="phone_number">Номер телефона:</label>
-      <input type="text" id="phone_number" name="phone_number" required>
+      <input type="text" id="phone_number" name="phone_number">
     </div>
     <div>
       <label for="work_phone_number">Внутренний рабочий номер телефона:</label>
@@ -155,15 +247,15 @@
     </div>
     <div>
       <label for="email">Email:</label>
-      <input type="email" id="email" name="email" required>
+      <input type="email" id="email" name="email">
     </div>
     <div>
       <label for="position_at_work">Должность:</label>
-      <input type="text" id="position_at_work" name="position_at_work">
+      <input type="text" id="position_at_work" name="position_at_work" required>
     </div>
     <div>
       <label for="roles">Роль пользователя:</label>
-      <select id="roles" name="roles" multiple>
+      <select id="roles" name="roles" multiple required>
         <option th:each="role : ${roles}" th:value="${role.id}" th:text="${role.name}"></option>
       </select>
     </div>

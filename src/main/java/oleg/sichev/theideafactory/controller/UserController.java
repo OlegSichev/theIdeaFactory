@@ -7,14 +7,13 @@ import oleg.sichev.theideafactory.repository.UserRepository;
 import oleg.sichev.theideafactory.service.RoleService;
 import oleg.sichev.theideafactory.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
@@ -48,15 +47,15 @@ public class UserController {
             @RequestParam("password") String password,
             @RequestParam("surname") String surname,
             @RequestParam("name") String name,
-            @RequestParam(value = "middle_name", required = false) String middleName,
+            @RequestParam("middle_name") String middleName,
             @RequestParam(value = "snm", required = false) String snm,
             @RequestParam(value = "snm_in_the_genitive_case", required = false) String snmInGenitive,
             @RequestParam(value = "snm_in_the_dative_case", required = false) String snmInDative,
-            @RequestParam("phone_number") String phoneNumber,
+            @RequestParam(value = "phone_number", required = false) String phoneNumber,
             @RequestParam(value = "work_phone_number", required = false) String workPhoneNumber,
-            @RequestParam("email") String email,
+            @RequestParam(value = "phone_number", required = false) String email,
             @RequestParam(value = "position_at_work", required = false) String positionAtWork,
-            @RequestParam(value = "roles", required = false) List<Integer> roleIds,
+            @RequestParam(value = "roles") List<Integer> roleIds,
             Model model) {
 
         // Проверка на существование пользователя с таким же username
@@ -96,6 +95,14 @@ public class UserController {
         userRepository.save(newUser);
 
         return "redirect:/users";
+    }
+
+    @GetMapping("/check_username") //добавил 11.07.2024 для проверки - есть ли уже пользователь с таким логином
+    public ResponseEntity<Map<String, Boolean>> checkUsername(@RequestParam String username) {
+        boolean available = userRepository.findByUsername(username).isEmpty();
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("available", available);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/users")

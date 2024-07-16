@@ -68,13 +68,13 @@ public class SecurityConfig {
                 String redirectUrl = request.getContextPath();
                 Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();for (GrantedAuthority authority : authorities) {
                     if (authority.getAuthority().equals("ROLE_ADMIN")) {
-                        redirectUrl += "/theIdeaFactoryIndexAdmin"; // Главная страница для администраторов
+                        redirectUrl += "/news"; // Главная страница для администраторов
                         break;
                     }
                 }
 
                 if (redirectUrl.equals(request.getContextPath())) {
-                    redirectUrl += "/theIdeaFactoryIndex"; // Главная страница для обычных пользователей
+                    redirectUrl += "/news"; // Главная страница для обычных пользователей
                 }
 
                 response.sendRedirect(redirectUrl);

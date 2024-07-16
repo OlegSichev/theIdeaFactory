@@ -40,18 +40,6 @@
             border-radius: 5px;
         }
 
-        .submit-btn {
-            width: 100%;
-            padding: 10px;
-            background-color: #007bff; /* Цвет кнопки "Отправить предложение" */
-            border: none;
-            border-radius: 5px;
-            color: #fff;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-
         .logout-btn {
             background-color: red;
         }
@@ -183,10 +171,9 @@
 
 <div class="container">
     <h2>Фабрика идей</h2>
-    <h2>Новости</h2>
+    <h2>Идеи на модерации</h2>
     <div id="username" class="title"></div>
 
-    <button class="submit-btn" onclick="location.href='/theIdeaFactoryIndex'">Предложить идею</button>
     <button class="update-btn" type="button" onclick="location.reload();">Обновить</button>
     <div class="filter-container">
         <input type="date" id="dateFilter" class="filter-input">
@@ -326,7 +313,7 @@
                 entryDiv.style.paddingBottom = "10px";
                 entryDiv.style.marginBottom = "20px";
 
-                if (!entry.deleted && entry.approved) {
+                if (!entry.deleted && !entry.approved) {
                     // Отображаем имя пользователя
                     const nameParagraph = document.createElement('p');
                     nameParagraph.innerHTML = '<strong style="font-weight: 600; font-size: 135%;">' + entry.username + '</strong>';
@@ -355,6 +342,16 @@
                     // Отображаем статус
                     const approvalParagraph = document.createElement('p');
                     approvalParagraph.innerHTML = '<strong>Статус: </strong>' + (entry.approved ? 'Одобрен' : 'Не одобрен');
+
+                    // Если есть ответ на сообщение, отображаем его
+                    if (entry.answer) {
+                        const answerParagraph = document.createElement('p');
+                        answerParagraph.innerHTML = entry.answer.includes(':')
+                            ? `<strong>Ответ от ${entry.answer.split(':')[0].trim()}</strong>: ${entry.answer.split(':')[1].trim()}`
+                            : `<strong>Ответ:</strong> ${entry.answer}`;
+                        metadataDiv.appendChild(answerParagraph);
+                    }
+
 
                     // Если есть прикрепленные файлы, отображаем их
                     if (entry.files && entry.files.length > 0) {
@@ -396,7 +393,12 @@
                     // Добавляем заполненную запись в контейнер для записей
                     entriesContainer.appendChild(entryDiv);
                 }
-
+                entryDiv.addEventListener('dblclick', function () { //Функция отвечает за ответ и одобрение/неодобрение
+                    //постов со страницы модерации. Работает кривовато из-за того, что изначально затачивалась под
+                    // админскую страницу (с ней работает прекрасно). Либо допиливать, либо перенастроить только на эту
+                    // страницу, либо убрать нафиг отсюда и пусть работает только с админкой.
+                    window.location.href = '/admin/answer?id=' + entry.id;
+                }); //скобочка закрывающая функцию описанную выше.
             });
         }
 
