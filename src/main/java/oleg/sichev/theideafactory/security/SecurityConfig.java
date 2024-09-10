@@ -33,6 +33,9 @@ public class SecurityConfig {
                         .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                         // Доступ к странице логина и регистрации всем пользователям
                         .requestMatchers("/login", "/register").permitAll()
+                        // Доступ к папке uploads - это последнее редактирование доступов (04.09.2024) спустя долгое
+                        // время. Если что-то перестанет работать - попробовать удалить эту настройку.
+                        .requestMatchers("/uploads/**").permitAll()
                         // Доступ на главную страницу и к постам для пользователей и администраторов
                         .requestMatchers("/", "/theIdeaFactoryIndex.html").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/posts/**").hasAnyRole("USER", "ADMIN")
@@ -43,6 +46,7 @@ public class SecurityConfig {
                         .requestMatchers("/add_user").hasRole("ADMIN")
                         .requestMatchers("/edit_user/**").hasRole("ADMIN")
                         //.requestMatchers("/answer/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/tagReference").hasRole("ADMIN")
                         .anyRequest().authenticated() // Все остальные запросы требуют аутентификации
                 )
                 .formLogin(form -> form

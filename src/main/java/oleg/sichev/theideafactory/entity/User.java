@@ -22,7 +22,8 @@ public class User {
     private String snmInTheDativeCase; // Имя в дательном падеже
     private String phoneNumber;
     private String workPhoneNumber;
-    private String positionAtWork;
+    private String departmentAtWork; // Структурное подразделение
+    private String positionAtWork; // Должность
 
     @Column(nullable = false, unique = true)
     private String username;
@@ -123,6 +124,14 @@ public class User {
 
     public String getPositionAtWork() {
         return positionAtWork;
+    }
+
+    public String getDepartmentAtWork() {
+        return departmentAtWork;
+    }
+
+    public void setDepartmentAtWork(String departmentAtWork) {
+        this.departmentAtWork = departmentAtWork;
     }
 
     public void setPositionAtWork(String positionAtWork) {

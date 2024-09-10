@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -54,9 +55,9 @@ public class UserController {
             @RequestParam(value = "phone_number", required = false) String phoneNumber,
             @RequestParam(value = "work_phone_number", required = false) String workPhoneNumber,
             @RequestParam(value = "phone_number", required = false) String email,
+            @RequestParam(value = "department_at_work", required = false) String departmentAtWork,
             @RequestParam(value = "position_at_work", required = false) String positionAtWork,
-            @RequestParam(value = "roles") List<Integer> roleIds,
-            Model model) {
+            @RequestParam(value = "roles") List<Integer> roleIds,Model model) {
 
         // Проверка на существование пользователя с таким же username
         if (userRepository.findByUsername(username).isPresent()) {
@@ -89,11 +90,11 @@ public class UserController {
         newUser.setPhoneNumber(phoneNumber);
         newUser.setWorkPhoneNumber(workPhoneNumber);
         newUser.setEmail(email);
+        newUser.setDepartmentAtWork(departmentAtWork);
         newUser.setPositionAtWork(positionAtWork);
         newUser.setRoles(roles);
 
-        userRepository.save(newUser);
-
+        userService.save(newUser);
         return "redirect:/users";
     }
 
@@ -142,6 +143,7 @@ public class UserController {
             @RequestParam("phone_number") String phoneNumber,
             @RequestParam(value = "work_phone_number", required = false) String workPhoneNumber,
             @RequestParam("email") String email,
+            @RequestParam(value = "department_at_work", required = false) String departmentAtWork,
             @RequestParam(value = "position_at_work", required = false) String positionAtWork,
             @RequestParam(value = "roles", required = false) List<Integer> roleIds,
             Model model) {
@@ -162,6 +164,7 @@ public class UserController {
         user.setPhoneNumber(phoneNumber);
         user.setWorkPhoneNumber(workPhoneNumber);
         user.setEmail(email);
+        user.setDepartmentAtWork(departmentAtWork);
         user.setPositionAtWork(positionAtWork);
 
         // Извлечение ролей из списка идентификаторов
@@ -177,5 +180,25 @@ public class UserController {
         userService.save(user);
 
         return "redirect:/users";
+    }
+
+    @PostMapping("/change-password-admin")
+    public String changePasswordAdmin(
+            @RequestParam("id") Integer id,
+            @RequestParam("new_password") String newPassword,
+            RedirectAttributes redirectAttributes) {
+
+        // Найдите пользователя по ID
+        User user = userService.findById(id);
+        if (user == null) {
+            return "redirect:/users"; // или другая страница с ошибкой
+        }
+
+        // Обновите пароль пользователя
+        userService.updatePassword(user, newPassword);
+
+        // Перенаправьте на страницу с сообщением об успехе
+        redirectAttributes.addFlashAttribute("success", "Пароль успешно изменен.");
+        return "redirect:/users"; // или перенаправление на страницу пользователя
     }
 }

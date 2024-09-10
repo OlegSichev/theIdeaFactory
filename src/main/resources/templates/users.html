@@ -92,6 +92,12 @@
       background: #dc3545;
     }
 
+    .profile-btn-container { /* Измененное имя класса */
+      position: absolute;
+      bottom: 40px;
+      left: 20px;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -176,16 +182,31 @@
         }
       }
     }
+
+    setInterval(function() {
+      fetch('/notifications/count')
+              .then(response => response.json())
+              .then(data => {
+                const count = data;
+                const notificationLink = document.querySelector('.notifications-btn'); // Теперь ищем ссылку
+                notificationLink.textContent = count > 0 ? 'Мои уведомления (' + count + ')' : 'Мои уведомления';
+              });
+    }, 5000);
   </script>
 </head>
 <body>
 <div class="menu">
   <a href="/">Главная страница</a>
+  <a href="/notifications" class="notifications-btn">Мои уведомления</a>
   <a href="#">Блог</a>
   <a href="/add_user">Добавить нового пользователя</a>
   <a href="/users">Обновить список пользователей</a>
   <a href="/theIdeaFactoryIndexAdmin">Все идеи (Администрирование)</a>
+  <a href="/admin/tagReference">Справочник тегов</a>
   <a href="/logout" class="logout-btn">Выход</a>
+  <div class="profile-btn-container">
+    <button onclick="location.href='/profile'" class="profile-btn" style="background-color: #28a745;">Мой профиль</button>
+  </div>
 </div>
 <div class="container-table">
   <h1>Список пользователей</h1>

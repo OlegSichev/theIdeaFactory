@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Справочник тегов</title>
+    <style>
+        body, html {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .menu {
+            width: 200px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: #ddd;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu button {
+            display: block;
+            margin-bottom: 10px;
+            width: 100%;
+            padding: 10px;
+            color: #fff;
+            background: #6c757d;
+            border: none;
+            text-align: left;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .menu button.logout-btn {
+            background: #dc3545;
+        }
+
+        /* Добавление стилей для контейнера уведомлений */
+        .notification {
+            display: none;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #d4edda; /* Цвет фона для успешного уведомления */
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            color: #155724;
+        }
+
+        .notification.error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .notification.success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .profile-btn-container {
+            position: absolute;
+            bottom: 40px;
+            left: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center; /* Центрирование содержимого контейнера */
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .tag-list {
+            margin-bottom: 20px;
+            text-align: left; /* Сброс центрирования для списка тегов */
+            padding-left: 0; /* Убираем стандартный отступ */
+        }
+
+        .tag-list li {
+            list-style-type: none;
+            padding: 10px;
+            border: 1px solid #ddd;
+
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tag-list span {
+            flex-grow: 1;
+        }
+
+        .tag-list li button {
+            background-color: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+
+        .tag-list li .edit-button {
+            background-color: green;
+        }
+
+        .tag-list li .delete-button {
+            background-color: red;
+        }
+
+        input[type="text"]#search-input {
+            width: 300px; /* Изменение ширины поля поиска */
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        .add-tag-form {
+            margin-top: 20px;
+        }
+
+        .add-tag-form input[type="text"] {
+            padding: 10px;
+            width: calc(100% - 22px);
+            margin-right: -1px;
+            border: 1px solid #ddd;
+        }
+
+        .add-tag-form button {
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+    </style>
+
+</head>
+<body>
+<div class="menu">
+    <button onclick="location.href='/news'">Главная страница</button>
+    <button onclick="location.href='/notifications'" class="notifications-btn">Мои уведомления</button>
+    <button onclick="location.href='/theIdeaFactoryIndex'">Мои идеи (Пользовательская страница)</button>
+    <button disabled>Блог</button>
+    <button class="users-btn" onclick="location.href='/users'">Список пользователей</button>
+    <button class="users-btn" onclick="location.href='/ideasForModeration'">Идеи на модерации</button>
+    <button class="users-btn" onclick="location.href='/theIdeaFactoryIndexAdmin'">Все идеи (Администрирование)</button>
+    <button class="users-btn" onclick="location.href='/admin/tagReference'">Справочник тегов</button>
+    <button class="logout-btn" onclick="location.href='/logout'">Выход</button>
+    <div class="profile-btn-container">
+
+        <button onclick="location.href='/profile'" class="profile-btn" style="background-color: #28a745;">Мой профиль
+        </button>
+    </div>
+</div>
+
+<div class="container">
+    <h1>Фабрика идей</h1>
+    <h1>Справочник тегов</h1>
+    <input type="text" id="search-input" placeholder="Поиск по тегу..." oninput="searchTags()">
+    <div class="add-tag-form">
+        <input type="text" id="new-tag" placeholder="Введите название нового тега">
+        <button onclick="addTag()">Добавить</button>
+    </div>
+    <div class="notification" id="notification"></div>
+    <ul class="tag-list" id="tag-list">
+        <!-- Динамически обновляемые теги -->
+    </ul>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadTags();
+    });
+
+    let tags = [];
+
+    async function loadTags() {
+        try {
+            const response = await fetch('/api/tags');
+            if (!response.ok) {
+                throw new Error('Ошибка при загрузке тегов');
+            }
+            tags = await response.json();
+            const tagList = document.getElementById('tag-list');
+            tagList.innerHTML = '';
+
+            // Сортируем теги в обратном порядке
+            tags.sort((a, b) => b.id - a.id);
+
+            tags.forEach((tag) => {
+                const li = document.createElement('li');
+                li.id = `tag-${tag.id}`; // Добавляем id к li
+                li.innerHTML = `<span>${tag.name}</span> <button class="edit-button" onclick="editTag(${tag.id})">Редактировать</button> <button class="delete-button" onclick="removeTag(${tag.id})">Удалить</button>`;
+                tagList.appendChild(li);
+            });
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+    async function addTag() {
+        const newTagInput = document.getElementById('new-tag');
+        const newTag = newTagInput.value.trim();
+        const notification = document.getElementById('notification');
+
+        if (newTag) {
+            if (tags.some(tag => tag.name.toLowerCase() === newTag.toLowerCase())) {
+                notification.textContent = 'Тег уже существует';
+                notification.classList.add('error');
+                notification.classList.remove('success');
+                notification.style.display = 'block';
+                return;
+            }
+
+            // Если такого тега нет, добавляем его
+            const formData = new URLSearchParams();
+            formData.append('tagName', newTag);
+
+            try {
+                const response = await fetch('/tags', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    await loadTags();
+                    newTagInput.value = '';
+                    notification.textContent = 'Тег успешно добавлен';
+                    notification.classList.add('success');
+                    notification.classList.remove('error');
+                    notification.style.display = 'block';
+                } else {
+                    throw new Error('Ошибка при добавлении тега.');
+                }
+            } catch (error) {
+                alert(error.message);
+            }
+        } else {
+            notification.textContent = 'Введите название тега.';
+            notification.classList.add('error');
+            notification.classList.remove('success');
+            notification.style.display = 'block';
+        }
+    }
+
+    async function removeTag(tagId) {
+        try {
+            const response = await fetch(`/api/tags/${tagId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                await loadTags();
+            } else {
+                throw new Error('Ошибка при удалении тега.');
+            }
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+    async function editTag(tagId) {
+        const li = document.getElementById(`tag-${tagId}`);
+        const tagName = li.querySelector('span').textContent.trim(); // Извлекаем имя тега из span
+        const editInput = document.createElement('input');
+        editInput.type = 'text';
+        editInput.value = tagName;
+
+        const saveButton = document.createElement('button');
+        saveButton.textContent = 'Сохранить';
+        saveButton.onclick = () => saveTag(tagId);
+
+        // Заменяем текст тега на поле ввода
+        li.innerHTML = '';
+        li.appendChild(editInput);
+        li.appendChild(saveButton);
+    }
+
+    async function saveTag(tagId) {
+        const li = document.getElementById(`tag-${tagId}`);
+        const newTagName = li.querySelector('input').value.trim();
+
+        if (newTagName) { // Проверка на пустое значение
+            // Отправляем запрос на сервер для обновления тега
+            try {
+                const response = await fetch(`/api/tags/${tagId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+
+                    body: `newName=${encodeURIComponent(newTagName)}`
+                });
+
+                if (response.ok) {
+                    // Обновляем текст тега в li
+                    li.innerHTML = `<span>${newTagName}</span> <button class="edit-button" onclick="editTag(${tagId})">Редактировать</button> <button class="delete-button" onclick="removeTag(${tagId})">Удалить</button>`;
+                } else {
+                    throw new Error('Ошибка при обновлении тега.');
+                }
+            } catch (error) {
+                alert(error.message);
+            }
+        } else {
+            alert('Введите новое имя тега.');
+        }
+    }
+
+    async function searchTags() {
+        const searchInput = document.getElementById('search-input');
+        const searchTerm = searchInput.value.trim();
+
+        try {
+            if (searchTerm) {
+                const response = await fetch(`/api/tags/search?tagName=${encodeURIComponent(searchTerm)}`);
+                if (!response.ok) {
+                    throw new Error('Ошибка при поиске тегов.');
+                }
+                const tags = await response.json();
+                const tagList = document.getElementById('tag-list');
+                tagList.innerHTML = '';
+
+                tags.forEach(tag => {
+                    const li = document.createElement('li');
+                    li.id = `tag-${tag.id}`; // Добавляем id к li
+                    li.innerHTML = `<span>${tag.name}</span> <button class="edit-button" onclick="editTag(${tag.id})">Редактировать</button> <button class="delete-button" onclick="removeTag(${tag.id})">Удалить</button>`;
+                    tagList.appendChild(li);
+                });
+            } else {
+                await loadTags();
+            }
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+</script>
+
+</body>
+</html>

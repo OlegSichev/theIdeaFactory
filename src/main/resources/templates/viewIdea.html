@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Просмотр поста</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        .menu {
+            width: 200px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            height: 100%;
+            background: #ddd;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu button {
+            display: block;
+            margin-bottom: 10px;
+            width: 100%;
+            padding: 10px;
+            color: #fff;
+            background: #6c757d;
+            border: none;
+            text-align: left;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .menu button:hover {
+            background: #5a6268;
+        }
+
+        .menu button.logout-btn {
+            background: #dc3545;
+        }
+
+        .profile-btn-container {
+            position: absolute;
+            bottom: 40px;
+            left: 20px;
+        }
+
+        .container {
+            margin: auto;
+            padding: 20px;
+            width: 27%; /* Adjusted width for better display */
+            max-width: 800px;
+            min-width: 400px;
+        }
+
+        .post-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .user-info {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .post-content {
+            margin-top: 10px;
+        }
+
+        .admin-response {
+            margin-top: 20px;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+
+        .admin-response h2 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+<div class="menu">
+    <button onclick="location.href='/'">Главная страница</button>
+    <button onclick="location.href='/notifications'" class="notifications-btn">Мои уведомления</button>
+    <button onclick="location.href='/theIdeaFactoryIndex'">
+        <span th:text="${isAdmin} ? 'Мои идеи (Пользовательская страница)' : 'Мои идеи'"></span>
+    </button>
+    <button onclick="location.href='/blog'">Блог</button>
+    <div th:if="${isAdmin}">
+        <button class="admin-btn" onclick="location.href='/ideasForModeration'">Идеи на модерации</button>
+    </div>
+    <div th:if="${isAdmin}">
+        <button class="admin-btn" onclick="location.href='/theIdeaFactoryIndexAdmin'">Все идеи (Администрирование)
+        </button>
+    </div>
+    <div th:if="${isAdmin}">
+        <button class="admin-btn" onclick="location.href='/admin/tagReference'">Справочник тегов
+        </button>
+    </div>
+    <button class="logout-btn" onclick="location.href='/logout'">Выход</button>
+    <div class="profile-btn-container">
+        <button onclick="location.href='/profile'" class="profile-btn">Мой профиль</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="post-container" th:id="'post-' + ${post.id}">
+        <h1><span th:text="${post.username}"></span></h1>
+        <div class="user-info">
+            <p>Дата публикации: <span th:text="${#dates.format(post.postedDate, 'dd.MM.yyyy HH:mm')}"></span></p>
+            <p>Статус:
+                <span th:if="${post.approved}">Одобрен</span>
+                <span th:if="${post.rejected}">Отклонен</span>
+                <span th:if="${!post.approved && !post.rejected}">На модерации</span>
+            </p>
+            <p>Удален: <span th:if="${post.isDeleted}">Да</span> <span th:unless="${post.isDeleted}">Нет</span></p>
+            <!--            Теги: <span th:text="${post.tags}"></span>-->
+            <p>Теги:
+                <span th:each="tag, iterStat : ${post.tags}">
+        <span th:text="${tag.name}"></span><span th:if="!${iterStat.last}">, </span>
+    </span>
+            </p>
+
+        </div>
+
+        <div class="post-content">
+            <p><strong>Идея: </strong><span th:text="${post.message}"></span></p>
+        </div>
+
+        <div class="admin-response" th:if="${post.answer != null}">
+            <h2>Ответ администрации:</h2>
+            <p th:text="${post.answer}"></p>
+        </div>
+
+        <!-- Добавьте информацию о файлах, лайках и т.д. -->
+    </div>
+</div>
+<script>
+    setInterval(function () {
+        fetch('/notifications/count') // Изменяем URL на ваш endpoint
+            .then(response => response.json())
+            .then(data => {
+                const count = data;
+                const notificationButton = document.querySelector('.notifications-btn');
+                notificationButton.textContent = count > 0 ? 'Мои уведомления (' + count + ')' : 'Мои уведомления';
+            });
+    }, 5000);
+
+    // При двойном клике на элемент с классом "post-container"
+    document.addEventListener('DOMContentLoaded', function () {
+        const postContainers = document.querySelectorAll('.post-container');
+        postContainers.forEach(container => {
+            container.addEventListener('dblclick', function (event) {
+                // Получение ID поста из атрибута th:id
+                const postId = this.id.split('-')[1];
+                // Перенаправление на URL с динамическим ID
+                window.location.href = `/editIdea?id=${postId}`;
+            });
+        });
+    });
+</script>
+</body>
+</html>

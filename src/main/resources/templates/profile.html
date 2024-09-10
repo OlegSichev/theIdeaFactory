@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Профиль пользователя</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+    }
+    .menu {
+      width: 250px;
+      position: fixed;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background-color: #ddd;
+      padding: 20px;
+      box-sizing: border-box;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    }
+    .menu button, .menu button.logout-btn {
+      display: block;
+      margin-bottom: 10px;
+      width: 100%;
+      padding: 10px;
+      color: #fff;
+      background-color: #6c757d;
+      border: none;
+      text-align: left;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .menu button.logout-btn {
+      background-color: #dc3545;
+    }
+    .menu button:hover {
+      background-color: #5a6268;
+    }
+    .menu button.logout-btn:hover {
+      background-color: #c82333;
+    }
+    .profile-btn-container {
+      position: absolute;
+      bottom: 40px;
+      left: 20px;
+    }
+    .container {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 20px;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      text-align: center;
+      box-sizing: border-box;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .success-message {
+      padding: 10px;
+      background-color: #d4edda;
+      color: #155724;
+      margin-bottom: 15px;
+      border-radius: 5px;
+    }
+    .input-field, .readonly-field {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    .readonly-field {
+      background-color: #f0f0f0;
+    }
+    .error {
+      color: #dc3545;
+      font-size: 0.9em;
+      margin-top: -10px;
+      margin-bottom: 10px;
+    }
+    .btn-green {
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .btn-blue {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+<div class="menu">
+  <button onclick="location.href='/'">Главная страница</button>
+  <button onclick="location.href='/notifications'">Мои уведомления</button>
+  <button onclick="location.href='#'">Блог</button>
+  <button onclick="location.href='/add_user'">Добавить нового пользователя</button>
+  <button onclick="location.href='/users'">Список пользователей</button>
+  <button onclick="location.href='/theIdeaFactoryIndexAdmin'">Администрирование</button>
+  <button class="users-btn" onclick="location.href='/admin/tagReference'">Справочник тегов</button>
+  <div class="profile-btn-container">
+    <button onclick="location.href='/logout'" class="logout-btn">Выход</button>
+  </div>
+</div>
+
+<div class="container">
+  <h2>Фабрика идей</h2>
+  <h1>Профиль пользователя</h1>
+
+  <!-- Вывод сообщения об успешном обновлении -->
+  <div th:if="${success}" class="success-message" th:text="${success}"></div>
+
+  <form th:action="@{/change-password}" method="post">
+    <!-- Поле логина -->
+    <div>
+      <label for="username">Логин</label>
+      <input type="text" id="username" th:value="${user.username}" class="readonly-field" readonly/>
+    </div>
+
+    <!-- Поле фамилии -->
+    <div>
+      <label for="surname">Фамилия</label>
+      <input type="text" id="surname" th:value="${user.surname}" class="readonly-field" readonly/>
+    </div>
+
+    <!-- Поле имени -->
+    <div>
+      <label for="name">Имя</label> <input type="text" id="name" th:value="${user.name}" class="readonly-field" readonly/>
+    </div>
+
+    <!-- Поле отчества (необязательно) -->
+    <div>
+      <label for="middleName">Отчество</label>
+      <input type="text" id="middleName" th:value="${user.middleName}" class="readonly-field" readonly/>
+    </div>
+
+    <!-- Поле номера телефона -->
+    <div>
+      <label for="phoneNumber">Номер телефона</label>
+      <input type="text" id="phoneNumber" th:value="${user.phoneNumber}" class="readonly-field" readonly/>
+    </div>
+
+    <!-- Поле рабочего номера телефона -->
+    <div>
+      <label for="work_phone_number">Рабочий номер телефона</label>
+      <input type="text" id="work_phone_number" th:value="${user.workPhoneNumber}" class="readonly-field" readonly/>
+    </div>
+
+    <!-- Поле структурного подразделения -->
+    <div>
+      <label for="position_at_work">Структурное подразделение</label>
+      <input type="text" id="department_at_work" th:value="${user.departmentAtWork}" class="readonly-field" readonly/>
+    </div>
+
+    <!-- Поле должности -->
+    <div>
+      <label for="position_at_work">Должность</label>
+      <input type="text" id="position_at_work" th:value="${user.positionAtWork}" class="readonly-field" readonly/>
+    </div>
+
+    <!-- Поле email -->
+    <div>
+      <label for="email">Электронная почта</label>
+      <input type="email" id="email" th:value="${user.email}" class="readonly-field" readonly/>
+    </div>
+
+    <!-- Поле для изменения пароля -->
+    <div>
+      <label for="password">Новый пароль</label>
+      <input type="password" id="password" name="password" class="input-field" required/>
+    </div>
+
+    <!-- Кнопка изменить пароль -->
+    <button type="submit" class="btn-green">Изменить пароль</button>
+  </form>
+
+  <!-- Кнопка Назад к постам -->
+  <button type="button" class="btn-blue" onclick="window.history.back()">Назад к постам</button>
+</div>
+</body>
+</html>

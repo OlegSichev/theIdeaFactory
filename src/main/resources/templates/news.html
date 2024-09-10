@@ -162,12 +162,55 @@
         .menu button.logout-btn {
             background: #dc3545;
         }
+
+        .profile-btn-container { /* Измененное имя класса */
+            position: absolute;
+            bottom: 40px;
+            left: 20px;
+        }
+
+        .dropdown-container {
+            display: flex;
+            align-items: center;
+        }
+
+        #dropdownToggleBtn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 5px;
+        }
+
+        .dropdown {
+            position: absolute;
+            display: none;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            background-color: white;
+            z-index: 1000;
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            width: 200px; /* Установите ширину в соответствии с вашими требуемыми размерами */
+        }
+
+        .dropdown li {
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .dropdown li:hover {
+            background-color: #ccc;
+        }
     </style>
 
 </head>
 <body>
 <div class="menu">
     <button onclick="location.href='/'">Главная страница</button>
+    <button onclick="location.href='/notifications'" class="notifications-btn">Мои уведомления</button>
     <button onclick="location.href='/theIdeaFactoryIndex'">
         <span th:text="${isAdmin} ? 'Мои идеи (Пользовательская страница)' : 'Мои идеи'"></span>
     </button>
@@ -176,29 +219,57 @@
         <button class="admin-btn" onclick="location.href='/ideasForModeration'">Идеи на модерации</button>
     </div>
     <div th:if="${isAdmin}">
-        <button class="admin-btn" onclick="location.href='/theIdeaFactoryIndexAdmin'">Все идеи (Администрирование)</button>
+        <button class="admin-btn" onclick="location.href='/theIdeaFactoryIndexAdmin'">Все идеи (Администрирование)
+        </button>
+    </div>
+    <div th:if="${isAdmin}">
+        <button class="admin-btn" onclick="location.href='/admin/tagReference'">Справочник тегов
+        </button>
     </div>
     <button class="logout-btn" onclick="location.href='/logout'">Выход</button>
+    <div class="profile-btn-container">
+        <button onclick="location.href='/profile'" class="profile-btn" style="background-color: #28a745;">Мой профиль</button>
+    </div>
 </div>
 
 <div class="container">
     <h2>Фабрика идей</h2>
-    <h2>Новости</h2>
     <div id="username" class="title"></div>
 
     <button class="submit-btn" onclick="location.href='/theIdeaFactoryIndex'">Предложить идею</button>
     <button class="update-btn" type="button" onclick="location.reload();">Обновить</button>
+
+    <br>
+    <div style="height: 120px; margin: 20px 0; border-radius: 5px; background: linear-gradient(to right, #ffffff, #f0f0f0, #ffffff); position: relative; text-align: center; color: black;">
+        <span style="font-size: 24px; font-weight: bold; color: black; text-shadow: 1px 1px 2px gray; position: relative; top: 20%;">Новости ниже</span>
+        <div style="position: absolute; left: 50%; transform: translateX(-50%) translateY(-50%); top: 70%; font-size: 48px; font-weight: bold; color: red;">
+            &#8595;
+        </div>
+    </div>
+    <br>
+    <h2 style="text-align: center; border: 1px solid #6c757d; margin: 0; padding: 10px;">Новости</h2>
+    <br>
+    <!--        Кусок кода выше начиная с div и до br над этим комментарием - строчка "Идеи ниже", градиент со стрелочкой и надпись "Мои идеи" в рамке-->
+    <br>
+
     <div class="filter-container">
         <input type="date" id="dateFilter" class="filter-input">
     </div>
 
-    <!-- Новый dropdown для фильтрации по категории -->
+    <!-- Новый блок для фильтрации по тегам -->
     <div class="filter-container">
-        <label for="categoryFilter">Фильтр по категории:</label>
-        <select id="categoryFilter">
-            <option value="">Все категории</option>
-        </select>
+        <label for="tagInput">Фильтр по тегам:</label>
+        <div class="dropdown-container">
+            <input type="text" id="tagInput" placeholder="Введите тег">
+            <button id="dropdownToggleBtn">&#9660;</button> <!-- Иконка стрелочки -->
+        </div>
+        <ul id="tagSuggestions" class="dropdown">
+            <!-- Теги будут добавлены динамически -->
+        </ul>
+        <button id="clearTagsBtn">Очистить выбранные теги</button>
     </div>
+    <p id="selectedTags">Выбранные теги: </p>
+    <p id="tagLimitMessage" style="color: red; display: none;">Нельзя выбрать больше 5-ти тегов.</p>
 
     <div class="sort-btn-container">
         <button type="button" id="sortDescBtn" class="sort-btn">Сначала новое</button>
@@ -246,125 +317,124 @@
                 const userEntries = allEntries;
 
                 // Сортировка записей от новых к старым по умолчанию
-                sortEntries(allEntries, 'desc');
-                displayEntries(allEntries);
+                sortEntries(userEntries, 'desc');
+                displayEntries(userEntries);
             }
         };
         xhr.send();
 
 
-// Заполнить фильтр категориями
-        function populateCategoryFilter(categories) {
-            const categoryFilter = document.getElementById('categoryFilter');
-
-            categories.forEach(function (category) {
-                var option = document.createElement('option');
-                option.value = category.name; // Используем имя категории в качестве значения
-                option.textContent = category.name;
-                categoryFilter.appendChild(option);
-            });
-        }
-
-// Функция для фильтрации и отображения записей
-        function filterEntriesByCategory(entries, categoryName) {
-            const filteredEntries = entries.filter(function (entry) {
-                return categoryName === "" || entry.category.name === categoryName;
-            });
-            displayEntries(filteredEntries);
-        }
-
-// Обработка изменения фильтра
-        document.getElementById('categoryFilter').addEventListener('change', function () {
-            const selectedCategoryName = this.value;
-            filterEntriesByCategory(entries, selectedCategoryName);
-        });
-
-// Пример загрузки записей и категорий
-        var entries = []; // Глобальная переменная для хранения записей
-
-        function loadEntries() {
-            // Предполагается, что вы получаете данные из API
-            fetch('/categories')
-                .then(response => response.json())
-                .then(data => {
-                    entries = data; // Предполагается, что ответ содержит массив записей
-                    displayEntries(entries);
-
-                    const categories = extractUniqueCategories(entries);
-                    populateCategoryFilter(categories);
-                })
-                .catch(error => console.error('Ошибка загрузки записей:', error));
-        }
-
-// Вызов функции для загрузки данных при загрузке страницы
-        document.addEventListener('DOMContentLoaded', loadEntries);
-
-// Функция для извлечения уникальных категорий
-        function extractUniqueCategories(entries) {
-            const categories = entries.map(entry => entry.category);
-            const uniqueCategories = Array.from(new Set(categories.map(cat => cat.name)))
-                .map(name => categories.find(cat => cat.name === name));
-            return uniqueCategories;
-        }
-
 // Функция для отображения записей
-        function displayEntries(entries) {
-            const entriesContainer = document.getElementById('entriesContainer');
-            entriesContainer.innerHTML = ""; // Очистить контейнер перед добавлением новых записей
+        function createDivider() {
+            const divider = document.createElement('hr');
+            divider.style.border = "none";
+            divider.style.height = "1px";
+            divider.style.backgroundColor = "#ccc";
+            divider.style.margin = "20px 0"; // Задает отступы сверху и снизу
+            return divider;
+        }
 
-            if (entries.length === 0) {
-                entriesContainer.innerHTML = '<p>Записи не найдены.</p>';
-                return;
-            }
+        function displayEntries(entries) {
+            const entriesContainer = document.getElementById('entriesContainer'); // Обязательно убедитесь, что у вас есть элемент с id 'entriesContainer'
+            entriesContainer.innerHTML = ''; // Очищаем контейнер перед добавлением новых записей
 
             entries.forEach(function (entry) {
                 // Создаем основной div для записи
-
                 const entryDiv = document.createElement('div');
                 entryDiv.className = 'entry';
                 entryDiv.style.borderBottom = "1px solid #ccc";
                 entryDiv.style.paddingBottom = "10px";
                 entryDiv.style.marginBottom = "20px";
 
+                // Добавляем атрибут data-tags, если есть теги
+                if (entry.tags && entry.tags.length > 0) {
+                    entryDiv.setAttribute('data-tags', entry.tags.map(tag => tag.name).join(', '));
+                }
+
                 if (!entry.deleted && entry.approved) {
+                    // Создаем div для метаданных и содержания (идея, файлы и ответ)
+                    const metadataAndContentDiv = document.createElement('div');
+                    metadataAndContentDiv.style.border = "1px solid #ddd";
+                    metadataAndContentDiv.style.padding = "10px";
+                    metadataAndContentDiv.style.backgroundColor = "#f9f9f9";
+                    metadataAndContentDiv.style.marginTop = "10px";
+
+                    // Контейнер для имя пользователя и статуса "Удаленный пост"
+                    const nameContainer = document.createElement('div');
+                    nameContainer.style.display = 'flex';
+                    nameContainer.style.justifyContent = 'space-between';
+
                     // Отображаем имя пользователя
                     const nameParagraph = document.createElement('p');
-                    nameParagraph.innerHTML = '<strong style="font-weight: 600; font-size: 135%;">' + entry.username + '</strong>';
+                    if (entry.anonymous) {
+                        nameParagraph.innerHTML = '<strong style="font-weight: 600; font-size: 135%;">Анонимная идея</strong>';
+                    } else {
+                        nameParagraph.innerHTML = '<strong style="font-weight: 600; font-size: 135%;">Автор идеи: ' + entry.username + '</strong>';
+                    }
 
-                    // Отображаем сообщение
-                    const messageParagraph = document.createElement('p');
-                    messageParagraph.innerHTML = '<strong>Сообщение:</strong> ' + entry.message;
+                    // Добавляем имя пользователя и статус "Удаленный пост" в контейнер
+                    nameContainer.appendChild(nameParagraph);
 
-                    // Создаем разделитель
-                    const divider = document.createElement('hr');
-                    divider.style.border = "none";
-                    divider.style.borderTop = "1px solid rgba(0, 0, 0, 0.1)";
-                    divider.style.margin = "10px 0";
+                    // Добавляем статус "Удаленный пост" рядом с именем, если пост удален
+                    if (entry.deleted) {
+                        const deletedParagraph = document.createElement('p');
+                        const strongElement = document.createElement('strong');
+                        strongElement.style.color = 'red';
+                        strongElement.textContent = 'Удаленная идея';
+                        strongElement.style.border = '3px solid red'; // Увеличили толщину рамки
+                        strongElement.style.padding = '3px'; // Добавили внутренний отступ
+                        deletedParagraph.appendChild(strongElement);
+                        nameContainer.appendChild(deletedParagraph);
+                    }
 
-                    // Создаем div для метаданных
-                    const metadataDiv = document.createElement('div');
-                    metadataDiv.style.border = "1px solid #ddd";
-                    metadataDiv.style.padding = "10px";
-                    metadataDiv.style.backgroundColor = "#f9f9f9";
-                    metadataDiv.style.marginTop = "10px";
+                    entryDiv.appendChild(nameContainer);
 
-                    // Отображаем категорию
-                    const categoryParagraph = document.createElement('p');
-                    categoryParagraph.innerHTML = '<strong>Категория:</strong> ' + (entry.category && entry.category.name ? entry.category.name : 'Неизвестная категория');
+                    // Отображаем теги
+                    if (entry.tags && entry.tags.length > 0) {
+                        const tagsParagraph = document.createElement('p');
+                        tagsParagraph.innerHTML = '<strong>Теги:</strong> ' + entry.tags.map(tag => tag.name).join(', ');
+                        metadataAndContentDiv.appendChild(tagsParagraph);
+                    }
 
                     // Отображаем статус
                     const approvalParagraph = document.createElement('p');
-                    approvalParagraph.innerHTML = '<strong>Статус: </strong>' + (entry.approved ? 'Одобрен' : 'Не одобрен');
+                    if (entry.rejected) {
+                        approvalParagraph.innerHTML = '<strong>Статус: </strong>Отклонено';
+                    } else {
+                        approvalParagraph.innerHTML = '<strong>Статус:</strong> ' + (entry.approved ? 'Одобрен' : 'На модерации');
+                    }
+                    metadataAndContentDiv.appendChild(approvalParagraph);
+
+                    // Отображаем дату публикации
+                    const dateParagraph = document.createElement('p');
+                    const date = new Date(entry.postedDate);
+                    dateParagraph.innerHTML = '<strong>Опубликовано:</strong> ' + date.toLocaleString();
+                    metadataAndContentDiv.appendChild(dateParagraph);
+
+                    // Добавляем линию-разделитель после даты публикации
+                    metadataAndContentDiv.appendChild(createDivider());
+
+                    // Отображаем сообщение
+                    const messageParagraph = document.createElement('p');
+                    messageParagraph.innerHTML = '<strong>Идея:</strong> ' + entry.message;
+                    metadataAndContentDiv.appendChild(messageParagraph);
 
                     // Если есть прикрепленные файлы, отображаем их
                     if (entry.files && entry.files.length > 0) {
                         const filesParagraph = document.createElement('p');
                         filesParagraph.innerHTML = '<strong><u>Прикрепленные файлы:</u></strong>';
 
+                        // В скрипте берется адрес из поля filesBaseURL и добавляется имя файла.
+                        // За адрес открытия файлов для скачки отвечает конфигурационный файл в папке config - WebConfig и FileController.
+                        const filesBaseURL = '/files/download?filename='; // Новый базовый URL для файлов
+
                         const filesList = document.createElement('ul');
                         entry.files.forEach(function (file) {
+                            // Создаем новый путь с использованием fileName
+                            const newFilePath = filesBaseURL + file.fileName;
+
                             const fileLink = document.createElement('a');
-                            fileLink.href = file.filePath;
+                            fileLink.href = newFilePath; // Устанавливаем новый путь
                             fileLink.textContent = file.fileName;
                             fileLink.download = file.fileName;
 
@@ -373,33 +443,34 @@
                             filesList.appendChild(fileItem);
                         });
 
-                        metadataDiv.appendChild(filesParagraph);
-                        metadataDiv.appendChild(filesList);
+                        metadataAndContentDiv.appendChild(filesParagraph);
+                        metadataAndContentDiv.appendChild(filesList);
                     }
 
-                    // Добавляем метаданные в основное содержимое записи
-                    metadataDiv.appendChild(categoryParagraph);
-                    metadataDiv.appendChild(approvalParagraph);
+                    // Если есть ответ на сообщение, отображаем его
+                    if (entry.answer) {
+                        metadataAndContentDiv.appendChild(createDivider()); // Добавляем разделитель перед ответом
+                        const answerParagraph = document.createElement('p');
+                        const answerContent = entry.answer.includes(':')
+                            ? `<strong>Ответ от ${entry.answer.split(':')[0].trim()}</strong>: ${entry.answer.split(':')[1].trim()}`
+                            : `<strong>Ответ:</strong> ${entry.answer}`;
+                        answerParagraph.innerHTML = answerContent;
+                        metadataAndContentDiv.appendChild(answerParagraph);
+                    }
 
-                    // Отображаем дату публикации внизу
-                    const dateParagraph = document.createElement('p');
-                    const date = new Date(entry.postedDate);
-                    dateParagraph.innerHTML = '<strong>Опубликовано:</strong> ' + date.toLocaleString();
-                    metadataDiv.appendChild(dateParagraph);
+                    // Добавляем метаданные и содержание в основной содержимое записи
+                    entryDiv.appendChild(metadataAndContentDiv);
 
-                    // Добавляем элементы в контейнер
-                    entryDiv.appendChild(nameParagraph);
-                    entryDiv.appendChild(messageParagraph);
-                    entryDiv.appendChild(divider); // Добавляем разделитель
-                    entryDiv.appendChild(metadataDiv);
-
-                    // Добавляем заполненную запись в контейнер для записей
+                    // Добавляем запись в контейнер
                     entriesContainer.appendChild(entryDiv);
-                }
 
+                    // Добавляем событие для перенаправления по двойному клику
+                    entryDiv.addEventListener('dblclick', function () {
+                        window.location.href = '/admin/answer?id=' + entry.id;
+                    });
+                }
             });
         }
-
 
         // Вспомогательная функция для фильтрации записей по дате
         function filterEntriesByDate(entries, date) {
@@ -422,22 +493,176 @@
 
         // События для кнопок сортировки
         document.getElementById('sortDescBtn').addEventListener('click', function () {
-            sortEntries(allEntries, 'desc');
+            sortEntries(allEntries.filter(entry => entry.username === currentUser), 'desc');
         });
 
         document.getElementById('sortAscBtn').addEventListener('click', function () {
-            sortEntries(allEntries, 'asc');
+            sortEntries(allEntries.filter(entry => entry.username === currentUser), 'asc');
         });
 
         // Обработчик для поля фильтра даты
         dateFilterInput.addEventListener('change', function () {
             const selectedDate = dateFilterInput.value;
+            const userEntries = allEntries.filter(entry => entry.username === currentUser);
             if (selectedDate) {
-                filterEntriesByDate(allEntries, selectedDate);
+                filterEntriesByDate(userEntries, selectedDate);
             } else {
-                displayEntries(allEntries);
+                displayEntries(userEntries);
             }
         });
+
+        // Функция отвечающая за обновление количества уведомлений в меню в кнопке "Мои уведомления"
+        setInterval(function () {
+            fetch('/notifications/count') // Изменяем URL на ваш endpoint
+                .then(response => response.json())
+                .then(data => {
+                    const count = data;
+                    const notificationButton = document.querySelector('.notifications-btn');
+                    notificationButton.textContent = count > 0 ? 'Мои уведомления (' + count + ')' : 'Мои уведомления';
+                });
+        }, 5000);
+
+        // Функция для отправки формы
+        function answerForUser() {
+            var form = document.getElementById("ideaForm");
+
+            // Обработчик события для отправки формы
+            form.addEventListener("submit", function (event) {
+                event.preventDefault(); // Предотвращаем стандартное поведение формы
+
+                var message = document.querySelector("textarea[name='message']").value;
+                var anonymousCheckbox = document.getElementById("anonymousCheckbox");
+                var isAnonymous = anonymousCheckbox.checked;
+
+                // Генерируем сообщение благодарности в зависимости от того, анонимно или нет отправляется предложение
+                let thankYouMessage;
+                if (isAnonymous) {
+                    thankYouMessage = "Спасибо! Ваше предложение отправлено анонимно!";
+                } else {
+                    thankYouMessage = `Спасибо, ${currentUser}! Ваше предложение отправлено!`; // Используем текущего пользователя
+                }
+
+                var formData = new FormData(form);
+
+                // Отправляем данные формы на сервер
+                fetch(form.action, {
+                    method: "POST",
+                    body: formData,
+                })
+                    .then(response => response.ok ? response.text() : Promise.reject('Ошибка при отправке формы'))
+                    .then(result => {
+                        notification.style.display = 'block'; // Показываем контейнер с сообщением
+                        notification.classList.remove('error'); // Удаляем класс ошибки, если он был
+                        notification.textContent = thankYouMessage;
+                        form.reset(); // Сбрасываем форму после отправки
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                        notification.style.display = 'block';
+                        notification.classList.add('error'); // Добавляем класс ошибки
+                        notification.textContent = 'Произошла ошибка при отправке предложения. Попробуйте еще раз.';
+                    });
+            });
+        }
+
+        // Инициализируем функцию
+        answerForUser();
+    });
+
+    // Получение тегов с сервера и добавление в dropdown для фильтрации
+    fetch('api/tags') // Предполагается наличие API для получения тегов
+        .then(response => response.json())
+        .then(data => {
+            const tagList = document.getElementById('tagSuggestions');
+            data.forEach(tag => {
+                const listItem = document.createElement('li');
+                listItem.textContent = tag.name;
+                listItem.dataset.value = tag.name; // Это может быть tag.id, в зависимости от вашей модели
+                listItem.addEventListener('click', function() {
+                    toggleTagSelection(tag.name);
+                    tagList.style.display = 'none';
+                    document.getElementById('tagInput').value = '';
+                });
+                tagList.appendChild(listItem);
+            });
+        })
+        .catch(error => console.error('Ошибка при получении тегов:', error));
+
+    let selectedTags = [];
+    const MAX_TAGS = 5;
+
+    function toggleTagSelection(tag) {
+        const tagIndex = selectedTags.indexOf(tag);
+
+        if (tagIndex === -1 && selectedTags.length >= MAX_TAGS) {
+            showTagLimitMessage(true);
+            return;
+        }
+
+        if (tagIndex === -1) {
+            selectedTags.push(tag);
+        } else {
+            selectedTags.splice(tagIndex, 1);
+        }
+
+        updateSelectedTagsDisplay();
+        filterEntriesByTags();
+    }
+
+    function updateSelectedTagsDisplay() {
+        const selectedTagsElement = document.getElementById('selectedTags');
+        selectedTagsElement.textContent = `Выбранные теги: ${selectedTags.join(', ')}`;
+        showTagLimitMessage(false);
+    }
+
+    function showTagLimitMessage(show) {
+        const tagLimitMessage = document.getElementById('tagLimitMessage');
+        tagLimitMessage.style.display = show ? 'block' : 'none';
+    }
+
+    function filterEntriesByTags() {
+        const entries = document.querySelectorAll('.entry');
+
+        entries.forEach(entry => {
+            const tagsAttribute = entry.dataset.tags;
+            const entryTags = tagsAttribute ? tagsAttribute.split(',').map(tag => tag.trim()) : [];
+            const shouldDisplay = selectedTags.length === 0 || selectedTags.some(tag => entryTags.includes(tag));
+            entry.style.display = shouldDisplay ? 'block' : 'none';
+        });
+    }
+
+    document.getElementById('tagInput').addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        const tagList = document.getElementById('tagSuggestions');
+        const tags = Array.from(tagList.children);
+
+        tags.forEach(tag => {
+            const isVisible = tag.textContent.toLowerCase().includes(query);
+            tag.style.display = isVisible ? 'block' : 'none';
+        });
+
+        tagList.style.display = query.length > 0 ? 'block' : 'none';
+    });
+
+    document.getElementById('dropdownToggleBtn').addEventListener('click', function(event) {
+        event.preventDefault(); // Останавливаем отправку формы
+
+        const tagList = document.getElementById('tagSuggestions');
+        const isCurrentlyVisible = tagList.style.display === 'block';
+        tagList.style.display = isCurrentlyVisible ? 'none' : 'block';
+
+        if (!isCurrentlyVisible) {
+            const tags = Array.from(tagList.children);
+            tags.forEach(tag => tag.style.display = 'block');
+        }
+    });
+
+    document.getElementById('clearTagsBtn').addEventListener('click', function(event) {
+        event.preventDefault(); // Останавливаем отправку формы
+
+        selectedTags = [];
+        updateSelectedTagsDisplay();
+        filterEntriesByTags();
     });
 </script>
 

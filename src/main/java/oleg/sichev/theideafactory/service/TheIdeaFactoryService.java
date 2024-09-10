@@ -1,9 +1,13 @@
 package oleg.sichev.theideafactory.service;
-import oleg.sichev.theideafactory.entity.File;
-import oleg.sichev.theideafactory.entity.TheIdeaFactoryEntity;
+import oleg.sichev.theideafactory.entity.*;
 import oleg.sichev.theideafactory.repository.FileRepository;
+import oleg.sichev.theideafactory.repository.NotificationRepository;
 import oleg.sichev.theideafactory.repository.TheIdeaFactoryRepository;
+import oleg.sichev.theideafactory.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,6 +26,14 @@ public class TheIdeaFactoryService {
     @Autowired
     private FileRepository fileRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
+
+    @Autowired TagService tagService;
+
     private static final String UPLOAD_DIRECTORY = "src/main/resources/uploads";
 
     public List<TheIdeaFactoryEntity> findAll() {
@@ -29,14 +41,29 @@ public class TheIdeaFactoryService {
     }
 
     public TheIdeaFactoryEntity save(TheIdeaFactoryEntity theIdeaFactoryEntity) {
+        Integer userId = getCurrentUserId();  // Получаем текущего userId
+        if (userId != null) {
+            theIdeaFactoryEntity.setUserId(userId);
+        }
         return theIdeaFactoryRepository.save(theIdeaFactoryEntity);
     }
 
+    private Integer getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            Optional<User> user = userRepository.findByUsername(userDetails.getUsername());
+            return user.map(User::getId).orElse(null);
+        }
+        return null;
+    }
+
     public TheIdeaFactoryEntity save(TheIdeaFactoryEntity theIdeaFactoryEntity, List<MultipartFile> files) throws IOException {
-        TheIdeaFactoryEntity savedEntity = save(theIdeaFactoryEntity);  // Используем оригинальный метод для сохранения поста
-        saveFiles(savedEntity, files);     // Сохраняем файлы
+        TheIdeaFactoryEntity savedEntity = save(theIdeaFactoryEntity);  // Используем измененный метод save
+        saveFiles(savedEntity, files);  // Сохраняем файлы после сохранения сущности
         return savedEntity;
     }
+
 
     private void saveFiles(TheIdeaFactoryEntity theIdeaFactoryEntity, List<MultipartFile> files) throws IOException {
         // Создаем папку, если не существует
@@ -60,10 +87,6 @@ public class TheIdeaFactoryService {
         }
     }
 
-    public List<TheIdeaFactoryEntity> findByCategory(Long categoryId) {
-        return theIdeaFactoryRepository.findByCategory_Id(categoryId);
-    }
-
     public List<TheIdeaFactoryEntity> getActivePosts() {
         return theIdeaFactoryRepository.findByIsDeletedFalse();
     }
@@ -78,7 +101,12 @@ public class TheIdeaFactoryService {
             TheIdeaFactoryEntity post = postOptional.get();
             String fullAnswer = answeredBy + ": " + answer;
             post.setAnswer(fullAnswer);  // Сохраняем ответ вместе с информацией о пользователе
-            return theIdeaFactoryRepository.save(post);
+            TheIdeaFactoryEntity savedPost = theIdeaFactoryRepository.save(post);
+
+            Long userId = post.getUserId().longValue(); // Конвертируем Integer в Long
+            createNotification(userId, postId, "Вам ответили");
+
+            return savedPost;
         }
         throw new IllegalArgumentException("Post not found with ID: " + postId);
     }
@@ -94,10 +122,26 @@ public class TheIdeaFactoryService {
         theIdeaFactoryRepository.deleteById(postId);
     }
 
-    public void approvePost(long postId, boolean approved) {
-        TheIdeaFactoryEntity post = theIdeaFactoryRepository.findById(postId).orElseThrow(() -> new IllegalArgumentException("Invalid post Id:" + postId));
-        post.setApproved(approved);
+    public void approvePost(long postId) {
+        TheIdeaFactoryEntity post = theIdeaFactoryRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid post Id: " + postId));
+        post.setApproved(true);
+        post.setRejected(false); // Устанавливаем rejected в false
         theIdeaFactoryRepository.save(post);
+
+        Long userId = post.getUserId().longValue(); // Конвертируем Integer в Long
+        createNotification(userId, postId, "Ваш пост одобрили");
+    }
+
+    public void rejectPost(long postId) {
+        TheIdeaFactoryEntity post = theIdeaFactoryRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid post Id: " + postId));
+        post.setApproved(false); // Устанавливаем approved в false
+        post.setRejected(true);
+        theIdeaFactoryRepository.save(post);
+
+        Long userId = post.getUserId().longValue(); // Конвертируем Integer в Long
+        createNotification(userId, postId, "Ваш пост отклонен");
     }
 
     public List<TheIdeaFactoryEntity> findApprovedPosts() {
@@ -110,5 +154,61 @@ public class TheIdeaFactoryService {
 
     public List<TheIdeaFactoryEntity> getAllEntriesWithComments() {
         return theIdeaFactoryRepository.findAllEntriesWithComments();
+    }
+
+    private void createNotification(Long userId, Long postId, String message) {
+        NotificationEntity notification = new NotificationEntity();
+        notification.setUserId(userId);
+        notification.setPostId(postId);
+        notification.setMessage(message);
+        notification.setRead(false);
+        notificationRepository.save(notification);
+    }
+
+    public void createPostWithTags(Integer userId, String username, String message, List<String> tagNames, List<MultipartFile> files, Path uploadsDir, boolean anonymous) throws IOException {
+        TheIdeaFactoryEntity post = new TheIdeaFactoryEntity();
+        post.setUserId(userId);
+        post.setUsername(username);
+        post.setMessage(message);
+        post.setApproved(false); // Установка значения по умолчанию
+        post.setAnonymous(anonymous);
+
+        // Добавляем теги к посту
+        for (String tagName : tagNames) {
+            Tag tag = tagService.findOrCreateTag(tagName.trim());
+            post.addTag(tag); // Добавляем тег к посту
+        }
+
+        // Сохраняем пост до сохранения файлов
+        theIdeaFactoryRepository.save(post);
+
+        // Обработайте и сохраните файлы, если они есть
+        if (files != null && !files.isEmpty()) {
+            saveFiles(post, files); // Используйте метод saveFiles для загрузки файлов
+        }
+    }
+
+
+    public void createPostWithTags(Integer userId, String username, String message, List<String> tagNames, boolean anonymous) {
+        TheIdeaFactoryEntity post = new TheIdeaFactoryEntity();
+        post.setUserId(userId);
+        post.setUsername(username);
+        post.setMessage(message);
+        post.setApproved(false); // Установка значения по умолчанию
+        post.setAnonymous(anonymous);
+
+        // Добавляем теги к посту
+        for (String tagName : tagNames) {
+            Tag tag = tagService.findOrCreateTag(tagName.trim());
+            post.addTag(tag); // Добавляем тег к посту
+        }
+
+        // Сохраняем сам пост
+        theIdeaFactoryRepository.save(post);
+    }
+
+
+    public List<TheIdeaFactoryEntity> findAllPosts() {
+        return theIdeaFactoryRepository.findAll();  // Убедитесь, что ваш репозиторий есть.
     }
 }

@@ -106,10 +106,12 @@
 <body>
 <div class="menu">
     <a href="/">Главная страница</a>
+    <a href="/notifications" class="notifications-btn">Мои уведомления</a>
     <a href="#">Блог</a>
     <a href="/add_user">Добавить нового пользователя</a>
     <a href="/users">Список пользователей</a>
     <a href="/theIdeaFactoryIndexAdmin">Администрирование</a>
+    <a href="/admin/tagReference">Справочник тегов</a>
     <a href="/logout" class="logout-btn">Выход</a>
 </div>
 
@@ -140,32 +142,44 @@
         </div>
         <div>
             <label for="snm_in_the_genitive_case">Имя в родительном падеже</label>
-            <input type="text" id="snm_in_the_genitive_case" name="snm_in_the_genitive_case" th:value="${user.snmInTheGenitiveCase}" class="input-field"/>
+            <input type="text" id="snm_in_the_genitive_case" name="snm_in_the_genitive_case"
+                   th:value="${user.snmInTheGenitiveCase}" class="input-field"/>
         </div>
         <div>
             <label for="snm_in_the_dative_case">Имя в дательном падеже</label>
-            <input type="text" id="snm_in_the_dative_case" name="snm_in_the_dative_case" th:value="${user.snmInTheDativeCase}" class="input-field"/>
+            <input type="text" id="snm_in_the_dative_case" name="snm_in_the_dative_case"
+                   th:value="${user.snmInTheDativeCase}" class="input-field"/>
         </div>
         <div>
             <label for="phone_number">Номер телефона</label>
-            <input type="text" id="phone_number" name="phone_number" th:value="${user.phoneNumber}" class="input-field"/>
+            <input type="text" id="phone_number" name="phone_number" th:value="${user.phoneNumber}"
+                   class="input-field"/>
         </div>
         <div>
             <label for="work_phone_number">Рабочий номер телефона</label>
-            <input type="text" id="work_phone_number" name="work_phone_number" th:value="${user.workPhoneNumber}" class="input-field"/>
+            <input type="text" id="work_phone_number" name="work_phone_number" th:value="${user.workPhoneNumber}"
+                   class="input-field"/>
         </div>
         <div>
             <label for="email">Электронная почта</label>
             <input type="email" id="email" name="email" th:value="${user.email}" class="input-field"/>
         </div>
         <div>
+            <label for="position_at_work">Структурное подразделение</label>
+            <input type="text" id="department_at_work" name="department_at_work" th:value="${user.departmentAtWork}"
+                   class="input-field"/>
+        </div>
+        <div>
             <label for="position_at_work">Должность</label>
-            <input type="text" id="position_at_work" name="position_at_work" th:value="${user.positionAtWork}" class="input-field"/>
+            <input type="text" id="position_at_work" name="position_at_work" th:value="${user.positionAtWork}"
+                   class="input-field"/>
         </div>
         <div>
             <label for="roles">Роли</label>
             <select id="roles" name="roles" multiple>
-                <option th:each="role : ${allRoles}" th:value="${role.id}" th:text="${role.name}" th:selected="${user.roles.contains(role)}">Role Name</option>
+                <option th:each="role : ${allRoles}" th:value="${role.id}" th:text="${role.name}"
+                        th:selected="${user.roles.contains(role)}">Role Name
+                </option>
             </select>
         </div>
 
@@ -176,6 +190,28 @@
         <input type="hidden" name="id" th:value="${user.id}"/>
         <button type="submit" class="delete-btn">Удалить пользователя</button>
     </form>
+
+    <h2>Изменить пароль</h2>
+    <form th:action="@{/change-password-admin}" th:object="${user}" method="post">
+        <input type="hidden" name="id" th:value="${user.id}"/>
+        <div>
+            <label for="new_password">Новый пароль</label>
+            <input type="password" id="new_password" name="new_password" class="input-field" required/>
+        </div>
+        <button type="submit">Изменить пароль</button>
+    </form>
+
 </div>
+<script>
+    setInterval(function () {
+        fetch('/notifications/count')
+            .then(response => response.json())
+            .then(data => {
+                const count = data;
+                const notificationLink = document.querySelector('.notifications-btn'); // Теперь ищем ссылку
+                notificationLink.textContent = count > 0 ? 'Мои уведомления (' + count + ')' : 'Мои уведомления';
+            });
+    }, 5000);
+</script>
 </body>
 </html>

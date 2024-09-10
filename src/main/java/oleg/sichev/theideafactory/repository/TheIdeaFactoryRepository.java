@@ -9,11 +9,13 @@ import java.util.List;
 
 @Repository
 public interface TheIdeaFactoryRepository extends JpaRepository<TheIdeaFactoryEntity, Long> {
-    List<TheIdeaFactoryEntity> findByCategory_Id(Long categoryId);
     List<TheIdeaFactoryEntity> findByApproved(boolean approved);
+    List<TheIdeaFactoryEntity> findByRejected(boolean rejected);
     List<TheIdeaFactoryEntity> findByIsDeletedFalse();
 
     List<TheIdeaFactoryEntity> findByIsDeletedTrue();
+
+    List<TheIdeaFactoryEntity> findAll();
 
     @Query("SELECT e FROM TheIdeaFactoryEntity e LEFT JOIN FETCH e.comments")
     List<TheIdeaFactoryEntity> findAllEntriesWithComments();

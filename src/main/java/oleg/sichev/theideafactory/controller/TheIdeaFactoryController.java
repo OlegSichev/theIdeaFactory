@@ -1,10 +1,20 @@
 package oleg.sichev.theideafactory.controller;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import oleg.sichev.theideafactory.entity.TheIdeaFactoryEntity;
 import oleg.sichev.theideafactory.repository.TheIdeaFactoryRepository;
+import oleg.sichev.theideafactory.security.CustomUserDetails;
 import oleg.sichev.theideafactory.service.LikeService;
 import oleg.sichev.theideafactory.service.TheIdeaFactoryService;
+import oleg.sichev.theideafactory.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -16,13 +26,14 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 public class TheIdeaFactoryController {
@@ -36,6 +47,12 @@ public class TheIdeaFactoryController {
 
     @Autowired
     private LikeService likeService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private Environment env;
 
     @GetMapping("/theIdeaFactoryIndex")
     public String showGuestBook(Model model, Authentication authentication) {
@@ -56,7 +73,6 @@ public class TheIdeaFactoryController {
     }
 
 
-
 //    @GetMapping("/theIdeaFactoryIndex")
 //    public String showGuestBook(Model model) {
 //        List<TheIdeaFactoryEntity> entries = theIdeaFactoryService.findAll();
@@ -66,13 +82,27 @@ public class TheIdeaFactoryController {
 //    }
 
     @PostMapping("/theIdeaFactoryIndex")
-    public String addEntry(TheIdeaFactoryEntity theIdeaFactoryEntity,
+    public String addEntry(@Valid TheIdeaFactoryEntity theIdeaFactoryEntity,
                            @RequestParam("fileUpload") List<MultipartFile> files,
+                           @RequestParam(value = "tags", required = false, defaultValue = "") String tags,
+                           @RequestParam("anonymous") boolean anonymous,
                            Authentication authentication,
-                           RedirectAttributes redirectAttributes) {
+                           RedirectAttributes redirectAttributes,
+                           HttpServletRequest request) {
         if (authentication != null && authentication.isAuthenticated()) {
-            theIdeaFactoryEntity.setUsername(authentication.getName()); // устанавливаем имя пользователя из аутентификации
+            theIdeaFactoryEntity.setUsername(authentication.getName());
+
+            Integer userId = userService.getUserIdByUsername(authentication.getName());
+
+            if (userId != null) {
+                theIdeaFactoryEntity.setUserId(userId);
+            } else {
+                redirectAttributes.addFlashAttribute("message", "Пользователь не аутентифицирован.");
+                return "redirect:/theIdeaFactoryIndex";
+            }
         }
+
+        theIdeaFactoryEntity.setAnonymous(anonymous);
 
         try {
             boolean hasFiles = false;
@@ -87,31 +117,74 @@ public class TheIdeaFactoryController {
                 }
             }
 
+            List<String> tagNames = Arrays.stream(tags.split(","))
+                    .map(String::trim)
+                    .filter(tag -> !tag.isEmpty())
+                    .collect(Collectors.toList());
+
             if (hasFiles) {
-                // Создание директории, если она не существует
-                Path uploadsDir = Paths.get("src", "main", "resources", "uploads");
+                // Получите путь к папке uploads
+                ServletContext servletContext = request.getServletContext();
+                String uploadsPath = servletContext.getRealPath("uploads");
+                Path uploadsDir = Path.of(uploadsPath);
+
+                // Проверьте, существует ли папка, и создайте ее, если нет
                 if (!Files.exists(uploadsDir)) {
-                    Files.createDirectories(uploadsDir);
+                    try {
+                        Files.createDirectories(uploadsDir);
+                    } catch (IOException e) {
+                        // Обработайте ошибку при создании папки
+                        // Например, выведите сообщение об ошибке или верните код ошибки
+                        e.printStackTrace();
+                        redirectAttributes.addFlashAttribute("message", "Ошибка при создании папки для загрузки.");
+                        return "redirect:/theIdeaFactoryIndex";
+                    }
                 }
+
                 // Проверка прав доступа к директории
-                if (!Files.isWritable(uploadsDir)) {
-                    // Обработайте ошибку: у вас нет прав на запись в эту папку.
-                    throw new IOException("Нет прав на запись в директорию 'uploads'");
+                if (!Files.isWritable(uploadsDir)) {throw new IOException("Нет прав на запись в директорию 'uploads'");
                 }
-                // Сохранение поста и файлов
-                theIdeaFactoryService.save(theIdeaFactoryEntity, files);
+
+                // Сохранение поста с тегами и файлами
+                if (!files.isEmpty()) {
+                    theIdeaFactoryService.createPostWithTags(
+                            theIdeaFactoryEntity.getUserId(),
+                            theIdeaFactoryEntity.getUsername(),
+                            theIdeaFactoryEntity.getMessage(),
+                            tagNames,
+                            files, // Передаем список MultipartFile
+                            uploadsDir, // Передаем uploadsDir
+                            anonymous
+                    );
+                } else {
+                    // Сохранение поста без файла
+                    theIdeaFactoryService.createPostWithTags(
+                            theIdeaFactoryEntity.getUserId(),
+                            theIdeaFactoryEntity.getUsername(),
+                            theIdeaFactoryEntity.getMessage(),
+                            tagNames, anonymous);
+                    redirectAttributes.addFlashAttribute("message", "Пост успешно загружен!");
+                }
+
                 redirectAttributes.addFlashAttribute("message", "Пост и файлы успешно загружены!");
             } else {
-                // Сохранение только поста
-                theIdeaFactoryService.save(theIdeaFactoryEntity); // Используем метод save без файлов
+                // Сохранение только поста с тегами
+                theIdeaFactoryService.createPostWithTags(
+                        theIdeaFactoryEntity.getUserId(),
+                        theIdeaFactoryEntity.getUsername(),
+                        theIdeaFactoryEntity.getMessage(),
+                        tagNames, anonymous);
+
                 redirectAttributes.addFlashAttribute("message", "Пост успешно загружен!");
             }
         } catch (IOException e) {
             e.printStackTrace();
             redirectAttributes.addFlashAttribute("message", "Ошибка при загрузке поста или файлов.");
         }
+
         return "redirect:/theIdeaFactoryIndex";
     }
+
 
     @GetMapping("/getEntriesFromDatabase")
     @ResponseBody
@@ -149,6 +222,19 @@ public class TheIdeaFactoryController {
             redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при редактировании поста.");
         }
         return "redirect:/theIdeaFactoryIndex";
+    }
+
+    @GetMapping("/viewIdea/{id}")
+    public String showPostReadPage(@PathVariable Long id, Model model, Authentication authentication) {
+        Optional<TheIdeaFactoryEntity> post = theIdeaFactoryService.findById(id);
+        if (post.isPresent()) {
+            model.addAttribute("post", post.get());
+            if (authentication != null && authentication.isAuthenticated()) {
+                model.addAttribute("authenticatedUser", authentication.getName());
+            }
+            return "viewIdea";
+        }
+        return "redirect:/theIdeaFactoryIndex"; // Пост не найден, редирект на главную страницу
     }
 
     @PostMapping("/deletePost")
@@ -252,5 +338,37 @@ public class TheIdeaFactoryController {
     public List<TheIdeaFactoryEntity> getAllEntriesWithComments() {
         return theIdeaFactoryService.getAllEntriesWithComments();
     }
+
+    @PostMapping("/createPost")
+    public String createPost(@RequestParam Integer userId,
+                             @RequestParam String username,
+                             @RequestParam String message,
+                             @RequestParam(required = false, defaultValue = "") String tags,
+                             @RequestParam(name = "anonymous", required = false, defaultValue = "false") boolean anonymous // Добавляем параметр anonymous
+    ) throws IOException {
+        List<String> tagNames = Arrays.asList(tags.split(","));
+        theIdeaFactoryService.createPostWithTags(userId, username, message, tagNames, anonymous); // Передаем значение anonymous в сервис
+        return "redirect:/posts"; // перенаправление на страницу с постами
+    }
+
+
+    // Метод для скачки файлов. Не особо рабочий.
+//    @GetMapping("/files/{filename}")
+//    public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
+//        try {
+//            Path filePath = uploadsDir.resolve(filename).normalize();
+//            Resource resource = new UrlResource(filePath.toUri());
+//
+//            if (resource.exists() || resource.isReadable()) {
+//                return ResponseEntity.ok()
+//                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+//                        .body(resource);
+//            } else {
+//                throw new FileNotFoundException("File not found " + filename);
+//            }
+//        } catch (MalformedURLException | FileNotFoundException e) {
+//            throw new RuntimeException("Error: " + e.getMessage());
+//        }
+//    }
 
 }

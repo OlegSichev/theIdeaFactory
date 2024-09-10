@@ -29,7 +29,7 @@ public class HomeController {
     }
 
     @GetMapping("/theIdeaFactoryIndexAdmin")
-    public String postsTheIdeaFactoryIndexForAdmin() {
+    public String postsTheIdeaFactoryIndexForAdmin(){
         return "theIdeaFactoryIndexAdmin";
     }
 
@@ -54,7 +54,7 @@ public class HomeController {
     }
 
     @GetMapping("/logout")
-    public String logout() {
+    public String logout(){
         return "redirect:/login";
     }
 }

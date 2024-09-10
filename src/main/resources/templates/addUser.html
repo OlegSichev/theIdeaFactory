@@ -1,268 +1,285 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>Add User</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      margin: 0;
-      padding: 0;
-      padding-left: 220px; /* Оставляем место для бокового меню */
-    }
-
-    h1 {
-      text-align: center;
-      color: #444;
-      margin-bottom: 20px;
-    }
-
-    .menu {
-      width: 200px;
-      position: fixed;
-      left: 0;
-      top: 0;
-      height: 100%;
-      background: #ddd;
-      padding: 20px;
-      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    }
-
-    .menu a {
-      display: block;
-      margin-bottom: 10px;
-      padding: 8px;
-      font-size: 14px;
-      color: #fff;
-      background: #6c757d;
-      border: none;
-      text-align: left;
-      border-radius: 5px;
-      font-weight: bold;
-      cursor: pointer;
-      text-decoration: none;
-    }
-
-    .menu a.logout-btn {
-      background: #dc3545;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 600px;
-      margin: 20px auto;
-      background: #fff;
-      padding: 20px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-    }
-
-    form div {
-      margin-bottom: 15px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-
-    input[type="text"],
-    input[type="password"],
-    input[type="email"],
-    select {
-      width: calc(100% - 20px); /* Немного уменьшаем ширину */
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-
-    .error-msg {
-      color: red;
-      font-weight: bold;
-      margin-top: 5px;
-    }
-
-    button {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      color: #fff;
-      font-weight: bold;
-      cursor: pointer;
-      background-color: #007bff;
-    }
-
-    button.logout-btn {
-      background-color: red;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-  </style>
-  <script>
-    function updateFullName() {
-      const surname = document.getElementById('surname').value.trim();
-      const name = document.getElementById('name').value.trim();
-      const middleName = document.getElementById('middle_name').value.trim();
-
-      const fullName = `${surname} ${name} ${middleName}`.trim();
-      document.getElementById('snm').value = fullName;
-    }
-
-    async function checkUsernameAvailability(username) {
-      const response = await fetch(`/check_username?username=${username}`);
-      const data = await response.json();
-      return data.available;
-    }
-
-    function validateForm(event) {
-      const fields = [
-        'middle_name',
-        'snm_in_the_genitive_case',
-        'snm_in_the_dative_case',
-        'phone_number',
-        'work_phone_number',
-        'email'
-      ];
-
-      fields.forEach(fieldId => {
-        const field = document.getElementById(fieldId);
-        if (field.value.trim() === '') {
-          field.removeAttribute('name'); // remove field from form submission if empty
+    <title>Add User</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            padding-left: 220px; /* Оставляем место для бокового меню */
         }
-      });
 
-      const requiredFields = [
-        'username',
-        'password',
-        'surname',
-        'name',
-        'position_at_work'
-      ];
-
-      let formValid = true;
-      requiredFields.forEach(fieldId => {
-        const field = document.getElementById(fieldId);
-        if (field.value.trim() === '') {
-          formValid = false;
-          field.style.borderColor = 'red';
-        } else {
-          field.style.borderColor = '';
+        h1 {
+            text-align: center;
+            color: #444;
+            margin-bottom: 20px;
         }
-      });
 
-      if (!formValid) {
-        event.preventDefault();
-        alert('Пожалуйста, заполните все обязательные поля.');
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', (event) => {
-      const surnameField = document.getElementById('surname');
-      const nameField = document.getElementById('name');
-      const middleNameField = document.getElementById('middle_name');
-      const usernameField = document.getElementById('username');
-      const usernameError = document.getElementById('username-error');
-
-      surnameField.addEventListener('input', updateFullName);
-      nameField.addEventListener('input', updateFullName);
-      middleNameField.addEventListener('input', updateFullName);
-
-      usernameField.addEventListener('input', async () => {
-        const username = usernameField.value.trim();
-        if (username.length > 0) {
-          const available = await checkUsernameAvailability(username);
-          if (!available) {
-            usernameError.textContent = "Пользователь с таким логином уже существует, придумайте другой логин!";
-          } else {
-            usernameError.textContent = "";
-          }
-        } else {
-          usernameError.textContent = "";
+        .menu {
+            width: 200px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: #ddd;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
         }
-      });
 
-      document.querySelector('form').addEventListener('submit', validateForm);
-    });
-  </script>
+        .menu a {
+            display: block;
+            margin-bottom: 10px;
+            padding: 8px;
+            font-size: 14px;
+            color: #fff;
+            background: #6c757d;
+            border: none;
+            text-align: left;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .menu a.logout-btn {
+            background: #dc3545;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        form div {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        select {
+            width: calc(100% - 20px); /* Немного уменьшаем ширину */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .error-msg {
+            color: red;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #007bff;
+        }
+
+        button.logout-btn {
+            background-color: red;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <script>
+        function updateFullName() {
+            const surname = document.getElementById('surname').value.trim();
+            const name = document.getElementById('name').value.trim();
+            const middleName = document.getElementById('middle_name').value.trim();
+
+            const fullName = `${surname} ${name} ${middleName}`.trim();
+            document.getElementById('snm').value = fullName;
+        }
+
+        async function checkUsernameAvailability(username) {
+            const response = await fetch(`/check_username?username=${username}`);
+            const data = await response.json();
+            return data.available;
+        }
+
+        function validateForm(event) {
+            const fields = [
+                'middle_name',
+                'snm_in_the_genitive_case',
+                'snm_in_the_dative_case',
+                'phone_number',
+                'work_phone_number',
+                'email'
+            ];
+
+            fields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field.value.trim() === '') {
+                    field.removeAttribute('name'); // remove field from form submission if empty
+                }
+            });
+
+            const requiredFields = [
+                'username',
+                'password',
+                'surname',
+                'name',
+                'department_at_work',
+                'position_at_work'
+            ];
+
+            let formValid = true;
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field.value.trim() === '') {
+                    formValid = false;
+                    field.style.borderColor = 'red';
+                } else {
+                    field.style.borderColor = '';
+                }
+            });
+
+            if (!formValid) {
+                event.preventDefault();
+                alert('Пожалуйста, заполните все обязательные поля.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const surnameField = document.getElementById('surname');
+            const nameField = document.getElementById('name');
+            const middleNameField = document.getElementById('middle_name');
+            const usernameField = document.getElementById('username');
+            const usernameError = document.getElementById('username-error');
+
+            surnameField.addEventListener('input', updateFullName);
+            nameField.addEventListener('input', updateFullName);
+            middleNameField.addEventListener('input', updateFullName);
+
+            usernameField.addEventListener('input', async () => {
+                const username = usernameField.value.trim();
+                if (username.length > 0) {
+                    const available = await checkUsernameAvailability(username);
+                    if (!available) {
+                        usernameError.textContent = "Пользователь с таким логином уже существует, придумайте другой логин!";
+                    } else {
+                        usernameError.textContent = "";
+                    }
+                } else {
+                    usernameError.textContent = "";
+                }
+            });
+
+            document.querySelector('form').addEventListener('submit', validateForm);
+
+            setInterval(function () {
+                fetch('/notifications/count')
+                    .then(response => response.json())
+                    .then(data => {
+                        const count = data;
+                        const notificationLink = document.querySelector('.notifications-btn'); // Теперь ищем ссылку
+                        notificationLink.textContent = count > 0 ? 'Мои уведомления (' + count + ')' : 'Мои уведомления';
+                    });
+            }, 5000);
+        });
+    </script>
 </head>
 <body>
 <h1>Добавление нового пользователя</h1>
 <!-- Уведомление об ошибке -->
 <div th:if="${error}" th:text="${error}" style="color: red;"></div>
 <div class="container">
-  <form th:action="@{/submit_user}" method="post">
-    <!-- Поля формы -->
-    <div class="menu">
-      <a href="/">Главная страница</a>
-      <a href="#">Блог</a>
-      <a href="/add_user">Добавить нового пользователя</a>
-      <a href="/users">Список пользователей</a>
-      <a href="/theIdeaFactoryIndexAdmin">Администрирование</a>
-      <a href="/logout" class="logout-btn">Выход</a>
-    </div>
-    <div>
-      <label for="username">Логин:</label>
-      <input type="text" id="username" name="username" required>
-      <div id="username-error" class="error-msg"></div>
-    </div>
-    <div>
-      <label for="password">Пароль:</label>
-      <input type="password" id="password" name="password" required>
-    </div>
-    <div>
-      <label for="surname">Фамилия:</label>
-      <input type="text" id="surname" name="surname" required>
-    </div>
-    <div>
-      <label for="name">Имя:</label>
-      <input type="text" id="name" name="name" required>
-    </div>
-    <div>
-      <label for="middle_name">Отчество:</label>
-      <input type="text" id="middle_name" name="middle_name">
-    </div>
-    <div>
-      <label for="snm">ФИО (Полностью):</label>
-      <input type="text" id="snm" name="snm" readonly>
-    </div>
-    <div>
-      <label for="snm_in_the_genitive_case">ФИО в родительном падеже:</label>
-      <input type="text" id="snm_in_the_genitive_case" name="snm_in_the_genitive_case">
-    </div>
-    <div>
-      <label for="snm_in_the_dative_case">ФИО в дательном падеже:</label>
-      <input type="text" id="snm_in_the_dative_case" name="snm_in_the_dative_case">
-    </div>
-    <div>
-      <label for="phone_number">Номер телефона:</label>
-      <input type="text" id="phone_number" name="phone_number">
-    </div>
-    <div>
-      <label for="work_phone_number">Внутренний рабочий номер телефона:</label>
-      <input type="text" id="work_phone_number" name="work_phone_number">
-    </div>
-    <div>
-      <label for="email">Email:</label>
-      <input type="email" id="email" name="email">
-    </div>
-    <div>
-      <label for="position_at_work">Должность:</label>
-      <input type="text" id="position_at_work" name="position_at_work" required>
-    </div>
-    <div>
-      <label for="roles">Роль пользователя:</label>
-      <select id="roles" name="roles" multiple required>
-        <option th:each="role : ${roles}" th:value="${role.id}" th:text="${role.name}"></option>
-      </select>
-    </div>
-    <div>
-      <button type="submit">Добавить пользователя</button>
-    </div>
-  </form>
+    <form th:action="@{/submit_user}" method="post">
+        <!-- Поля формы -->
+        <div class="menu">
+            <a href="/">Главная страница</a>
+            <a href="/notifications" class="notifications-btn">Мои уведомления</a>
+            <a href="#">Блог</a>
+            <a href="/add_user">Добавить нового пользователя</a>
+            <a href="/users">Список пользователей</a>
+            <a href="/theIdeaFactoryIndexAdmin">Администрирование</a>
+            <a href="/admin/tagReference">Справочник тегов</a>
+            <a href="/logout" class="logout-btn">Выход</a>
+        </div>
+        <div>
+            <label for="username">Логин:</label>
+            <input type="text" id="username" name="username" required>
+            <div id="username-error" class="error-msg"></div>
+        </div>
+        <div>
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div>
+            <label for="surname">Фамилия:</label>
+            <input type="text" id="surname" name="surname" required>
+        </div>
+        <div>
+            <label for="name">Имя:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div>
+            <label for="middle_name">Отчество:</label>
+            <input type="text" id="middle_name" name="middle_name">
+        </div>
+        <div>
+            <label for="snm">ФИО (Полностью):</label>
+            <input type="text" id="snm" name="snm" readonly>
+        </div>
+        <div>
+            <label for="snm_in_the_genitive_case">ФИО в родительном падеже:</label>
+            <input type="text" id="snm_in_the_genitive_case" name="snm_in_the_genitive_case">
+        </div>
+        <div>
+            <label for="snm_in_the_dative_case">ФИО в дательном падеже:</label>
+            <input type="text" id="snm_in_the_dative_case" name="snm_in_the_dative_case">
+        </div>
+        <div>
+            <label for="phone_number">Номер телефона:</label>
+            <input type="text" id="phone_number" name="phone_number">
+        </div>
+        <div>
+            <label for="work_phone_number">Внутренний рабочий номер телефона:</label>
+            <input type="text" id="work_phone_number" name="work_phone_number">
+        </div>
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email">
+        </div>
+        <div>
+            <label for="position_at_work">Структурное подразделение:</label>
+            <input type="text" id="department_at_work" name="department_at_work" required>
+        </div>
+        <div>
+            <label for="position_at_work">Должность:</label>
+            <input type="text" id="position_at_work" name="position_at_work" required>
+        </div>
+        <div>
+            <label for="roles">Роль пользователя:</label>
+            <select id="roles" name="roles" multiple required>
+                <option th:each="role : ${roles}" th:value="${role.id}" th:text="${role.name}"></option>
+            </select>
+        </div>
+        <div>
+            <button type="submit">Добавить пользователя</button>
+        </div>
+    </form>
 </div>
 </body>
 </html>

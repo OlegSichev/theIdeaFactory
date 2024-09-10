@@ -1,5 +1,6 @@
 package oleg.sichev.theideafactory.controller;
 
+import jakarta.validation.Valid;
 import oleg.sichev.theideafactory.entity.TheIdeaFactoryEntity;
 import oleg.sichev.theideafactory.repository.TheIdeaFactoryRepository;
 import oleg.sichev.theideafactory.service.LikeService;
@@ -8,8 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +19,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,13 +35,6 @@ public class TheIdeaFactoryAdminController {
     @Autowired
     private LikeService likeService;
 
-    @GetMapping("/search") //Поиск по категории. Но он так же не работает, поэтому нужен ли этот метод или
-    // его стоит удалить/переписать - хз. Если его удалить сейчас - ничего не сломается
-    public String searchByCategory(@RequestParam("categoryId") Long categoryId, Model model) {
-        List<TheIdeaFactoryEntity> ideas = theIdeaFactoryService.findByCategory(categoryId);
-        model.addAttribute("ideas", ideas);
-        return "theIdeaFactoryIndexAdmin";
-    }
 
     @GetMapping("/theIdeaFactoryIndexAdmin")
     public String showAdminGuestBook(Model model) {
@@ -54,13 +45,16 @@ public class TheIdeaFactoryAdminController {
     }
 
     @PostMapping("/theIdeaFactoryIndexAdmin")
-    public String addAdminEntry(TheIdeaFactoryEntity theIdeaFactoryEntity,
+    public String addAdminEntry(@Valid TheIdeaFactoryEntity theIdeaFactoryEntity,
                                 @RequestParam("fileUpload") List<MultipartFile> files,
+                                @RequestParam("anonymous") boolean anonymous, // Принимаем значение анонимус
                                 Authentication authentication,
                                 RedirectAttributes redirectAttributes) {
         if (authentication != null && authentication.isAuthenticated()) {
             theIdeaFactoryEntity.setUsername(authentication.getName()); // устанавливаем имя пользователя из аутентификации
         }
+
+        theIdeaFactoryEntity.setAnonymous(anonymous); // Устанавливаем значение анонимус в сущность
 
         try {
             boolean hasFiles = false;
@@ -172,10 +166,23 @@ public class TheIdeaFactoryAdminController {
     }
 
 
+
     @PostMapping("/approvePost")
-    public String approvePost(@RequestParam long postId, @RequestParam boolean approved, RedirectAttributes redirectAttributes) {
+    public String approvePost(@RequestParam long postId, RedirectAttributes redirectAttributes) {
         try {
-            theIdeaFactoryService.approvePost(postId, approved);
+            theIdeaFactoryService.approvePost(postId); // Отправляем только postId в сервис
+            redirectAttributes.addFlashAttribute("successMessage", "Пост успешно обновлен!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при обновлении поста.");
+        }
+        return "redirect:/admin/theIdeaFactoryIndexAdmin";
+    }
+
+    @PostMapping("/rejectPost")
+    public String rejectPost(@RequestParam long postId, RedirectAttributes redirectAttributes) {
+        try {
+            theIdeaFactoryService.rejectPost(postId); // Отправляем только postId в сервис
             redirectAttributes.addFlashAttribute("successMessage", "Пост успешно обновлен!");
         } catch (Exception e) {
             e.printStackTrace();
@@ -208,5 +215,10 @@ public class TheIdeaFactoryAdminController {
             entity.getComments().add(comment);
             theIdeaFactoryRepository.save(entity);
         }
+    }
+
+    @GetMapping("/tagReference")
+    public String getTagsPage(){
+        return "tagReference";
     }
 }

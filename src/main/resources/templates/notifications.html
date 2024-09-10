@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Уведомления</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        .menu {
+            width: 200px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            height: 100%;
+            background: #ddd;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu button {
+            display: block;
+            margin-bottom: 10px;
+            width: 100%;
+            padding: 10px;
+            color: #fff;
+            background: #6c757d;
+            border: none;
+            text-align: left;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .menu button:hover {
+            background: #5a6268;
+        }
+
+        .menu button.logout-btn {
+            background: #dc3545;
+        }
+
+        .profile-btn-container {
+            position: absolute;
+            bottom: 40px;
+            left: 20px;
+        }
+
+        .container {
+            margin: auto;
+            padding: 20px;
+            width: 27%;
+            max-width: 800px;
+            min-width: 400px;
+        }
+
+        .title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .notifications {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .notification {
+            background-color: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .notification p {
+            margin: 5px 0;
+        }
+
+        .clear-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+<div class="menu">
+    <button onclick="location.href='/'">Главная страница</button>
+    <button onclick="location.href='/notifications'" class="notifications-btn">Мои уведомления</button>
+    <button onclick="location.href='/theIdeaFactoryIndex'">
+        <span th:text="${isAdmin} ? 'Мои идеи (Пользовательская страница)' : 'Мои идеи'"></span>
+    </button>
+    <button onclick="location.href='/blog'">Блог</button>
+    <div th:if="${isAdmin}">
+        <button class="admin-btn" onclick="location.href='/ideasForModeration'">Идеи на модерации</button>
+    </div>
+    <div th:if="${isAdmin}">
+        <button class="admin-btn" onclick="location.href='/theIdeaFactoryIndexAdmin'">Все идеи (Администрирование)
+        </button>
+    </div>
+    <div th:if="${isAdmin}">
+        <button class="admin-btn" onclick="location.href='/admin/tagReference'">Справочник тегов
+        </button>
+    </div>
+    <button class="logout-btn" onclick="location.href='/logout'">Выход</button>
+    <div class="profile-btn-container">
+        <button onclick="location.href='/profile'" class="profile-btn">Мой профиль</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="notifications">
+        <h1 class="title">Уведомления</h1>
+
+        <form action="/notifications/clear" method="post">
+            <button type="submit" class="clear-btn">Очистить уведомления</button>
+        </form>
+
+        <div th:each="notification : ${notifications}" class="notification">
+            <p th:text="${notification.message}"></p>
+            <p>Пост ID: <span th:text="${notification.postId}"></span></p>
+            <p>Время: <span th:text="${#temporals.format(notification.timestamp, 'dd.MM.yyyy HH:mm:ss')}"></span></p>
+            <a th:href="@{/viewIdea/{postId}(postId=${notification.postId})}">Перейти к идее</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Функция отвечающая за обновление количества уведомлений в меню в кнопке "Мои уведомления"
+    setInterval(function () {
+        fetch('/notifications/count') // Изменяем URL на ваш endpoint
+            .then(response => response.json())
+            .then(data => {
+                const count = data;
+                const notificationButton = document.querySelector('.notifications-btn');
+                notificationButton.textContent = count > 0 ? 'Мои уведомления (' + count + ')' : 'Мои уведомления';
+            });
+    }, 5000);</script>
+</body>
+</html>

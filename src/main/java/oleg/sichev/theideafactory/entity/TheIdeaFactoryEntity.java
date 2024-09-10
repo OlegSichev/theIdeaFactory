@@ -2,6 +2,8 @@ package oleg.sichev.theideafactory.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.util.*;
 
@@ -13,8 +15,13 @@ public class TheIdeaFactoryEntity {
     private Long id;
 
     @Column(nullable = false)
+    private Integer userId;
+
+    @Column(nullable = false)
     private String username;
 
+    @NotBlank(message = "Message cannot be blank")
+    @Size(max = 10000, message = "Message cannot be longer than 10000 characters")
     @Column(nullable = false, length = 10000)
     private String message;
 
@@ -23,6 +30,12 @@ public class TheIdeaFactoryEntity {
 
     @Column(name = "approved", nullable = false)
     private boolean approved;
+
+    @Column (name = "rejected", nullable = false)
+    private boolean rejected;
+
+    @Column (name = "anonymous", nullable = false)
+    private boolean anonymous;
 
     @Column(name = "isDeleted", nullable = false)
     private boolean isDeleted;
@@ -34,9 +47,8 @@ public class TheIdeaFactoryEntity {
     @JsonManagedReference
     private List<File> files = new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "category_id", nullable = false)
-    private Category category;
+//    @OneToMany(mappedBy = "entry", cascade = CascadeType.ALL, orphanRemoval = true)
+//    private Set<EntryTag> entryTags = new HashSet<>(); // Связь с EntryTag
 
     @OneToMany(mappedBy = "entry", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Like> likes = new HashSet<>();
@@ -86,14 +98,6 @@ public class TheIdeaFactoryEntity {
         this.files = files;
     }
 
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
     public String getAnswer() {
         return answer;
     }
@@ -132,5 +136,49 @@ public class TheIdeaFactoryEntity {
 
     public void setComments(List<String> comments) {
         this.comments = comments;
+    }
+
+    public boolean isRejected() {
+        return rejected;
+    }
+
+    public void setRejected(boolean rejected) {
+        this.rejected = rejected;
+    }
+
+    public Integer getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
+
+    @OneToMany(mappedBy = "entry", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<EntryTag> entryTags = new HashSet<>();
+
+    // Метод для добавления тега в пост
+    public void addTag(Tag tag) {
+        EntryTag entryTag = new EntryTag();
+        entryTag.setEntry(this);
+        entryTag.setTag(tag);
+        entryTags.add(entryTag);
+    }
+
+    // Метод для получения тегов
+    public Set<Tag> getTags() {
+        Set<Tag> tags = new HashSet<>();
+        for (EntryTag entryTag : entryTags) {
+            tags.add(entryTag.getTag());
+        }
+        return tags;
+    }
+
+    public boolean isAnonymous() {
+        return anonymous;
+    }
+
+    public void setAnonymous(boolean anonymous) {
+        this.anonymous = anonymous;
     }
 }
