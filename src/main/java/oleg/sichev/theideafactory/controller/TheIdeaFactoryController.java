@@ -5,16 +5,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import oleg.sichev.theideafactory.entity.TheIdeaFactoryEntity;
 import oleg.sichev.theideafactory.repository.TheIdeaFactoryRepository;
-import oleg.sichev.theideafactory.security.CustomUserDetails;
-import oleg.sichev.theideafactory.service.LikeService;
 import oleg.sichev.theideafactory.service.TheIdeaFactoryService;
 import oleg.sichev.theideafactory.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -26,12 +20,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -44,9 +35,6 @@ public class TheIdeaFactoryController {
 
     @Autowired
     private TheIdeaFactoryRepository theIdeaFactoryRepository;
-
-    @Autowired
-    private LikeService likeService;
 
     @Autowired
     private UserService userService;
@@ -295,49 +283,6 @@ public class TheIdeaFactoryController {
 
         return "ideasForModeration";
     }
-//    @GetMapping("/news")
-//    public String getApprovedPosts(Model model) {
-//        List<TheIdeaFactoryEntity> approvedPosts = theIdeaFactoryService.findApprovedPosts();
-//        model.addAttribute("posts", approvedPosts);
-//        return "news";
-//    }
-
-    @PostMapping("/{entryId}/like")
-    public ResponseEntity<String> likePost(@PathVariable long entryId, @RequestParam Integer userId) {
-        if (likeService.likePost(entryId, userId)) {
-            return ResponseEntity.ok("Post liked");
-        } else {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("User has already liked this post");
-        }
-    }
-
-    @PostMapping("/{id}/comment")
-    @ResponseBody
-    public ResponseEntity<String> commentEntry(@PathVariable Long id, @RequestBody String comment) {
-        // Проверка на пустой комментарий
-        if (comment == null || comment.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Comment cannot be empty");
-        }
-
-        // Поиск поста по ID
-        Optional<TheIdeaFactoryEntity> entityOptional = theIdeaFactoryRepository.findById(id);
-        if (entityOptional.isPresent()) {
-            TheIdeaFactoryEntity entity = entityOptional.get();
-            entity.getComments().add(comment); // Добавление комментария
-            theIdeaFactoryRepository.save(entity); // Сохранение изменений
-            return ResponseEntity.ok("Comment added successfully");
-        }
-
-        // Обработка случая, если пост не найден
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found");
-    }
-
-
-    @GetMapping("/entries-with-comments")
-    @ResponseBody
-    public List<TheIdeaFactoryEntity> getAllEntriesWithComments() {
-        return theIdeaFactoryService.getAllEntriesWithComments();
-    }
 
     @PostMapping("/createPost")
     public String createPost(@RequestParam Integer userId,
@@ -350,25 +295,5 @@ public class TheIdeaFactoryController {
         theIdeaFactoryService.createPostWithTags(userId, username, message, tagNames, anonymous); // Передаем значение anonymous в сервис
         return "redirect:/posts"; // перенаправление на страницу с постами
     }
-
-
-    // Метод для скачки файлов. Не особо рабочий.
-//    @GetMapping("/files/{filename}")
-//    public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
-//        try {
-//            Path filePath = uploadsDir.resolve(filename).normalize();
-//            Resource resource = new UrlResource(filePath.toUri());
-//
-//            if (resource.exists() || resource.isReadable()) {
-//                return ResponseEntity.ok()
-//                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
-//                        .body(resource);
-//            } else {
-//                throw new FileNotFoundException("File not found " + filename);
-//            }
-//        } catch (MalformedURLException | FileNotFoundException e) {
-//            throw new RuntimeException("Error: " + e.getMessage());
-//        }
-//    }
 
 }

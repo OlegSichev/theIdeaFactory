@@ -130,7 +130,7 @@ public class TheIdeaFactoryService {
         theIdeaFactoryRepository.save(post);
 
         Long userId = post.getUserId().longValue(); // Конвертируем Integer в Long
-        createNotification(userId, postId, "Ваш пост одобрили");
+        createNotification(userId, postId, "Ваша идея одобрена");
     }
 
     public void rejectPost(long postId) {
@@ -141,7 +141,7 @@ public class TheIdeaFactoryService {
         theIdeaFactoryRepository.save(post);
 
         Long userId = post.getUserId().longValue(); // Конвертируем Integer в Long
-        createNotification(userId, postId, "Ваш пост отклонен");
+        createNotification(userId, postId, "Ваша идея отклонена");
     }
 
     public List<TheIdeaFactoryEntity> findApprovedPosts() {
@@ -150,10 +150,6 @@ public class TheIdeaFactoryService {
 
     public List<TheIdeaFactoryEntity> getDeletedPosts() {
         return theIdeaFactoryRepository.findByIsDeletedTrue();
-    }
-
-    public List<TheIdeaFactoryEntity> getAllEntriesWithComments() {
-        return theIdeaFactoryRepository.findAllEntriesWithComments();
     }
 
     private void createNotification(Long userId, Long postId, String message) {

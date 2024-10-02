@@ -47,14 +47,8 @@ public class TheIdeaFactoryEntity {
     @JsonManagedReference
     private List<File> files = new ArrayList<>();
 
-//    @OneToMany(mappedBy = "entry", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private Set<EntryTag> entryTags = new HashSet<>(); // Связь с EntryTag
-
-    @OneToMany(mappedBy = "entry", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Like> likes = new HashSet<>();
-
-    @ElementCollection
-    private List<String> comments = new ArrayList<>();
+    @ManyToMany(mappedBy = "likedIdeas", cascade = CascadeType.ALL)
+    private Set<User> usersWhoLiked = new HashSet<>();
 
     // Геттеры и сеттеры
 
@@ -122,22 +116,6 @@ public class TheIdeaFactoryEntity {
         this.isDeleted = isDeleted;
     }
 
-    public Set<Like> getLikes() {
-        return likes;
-    }
-
-    public void setLikes(Set<Like> likes) {
-        this.likes = likes;
-    }
-
-    public List<String> getComments() {
-        return comments;
-    }
-
-    public void setComments(List<String> comments) {
-        this.comments = comments;
-    }
-
     public boolean isRejected() {
         return rejected;
     }
@@ -180,5 +158,13 @@ public class TheIdeaFactoryEntity {
 
     public void setAnonymous(boolean anonymous) {
         this.anonymous = anonymous;
+    }
+
+    public Set<User> getUsersWhoLiked() {
+        return usersWhoLiked;
+    }
+
+    public void setUsersWhoLiked(Set<User> usersWhoLiked) {
+        this.usersWhoLiked = usersWhoLiked;
     }
 }

@@ -5,7 +5,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            background-color: #F5F5F0;
             margin: 0;
             padding: 0;
         }
@@ -40,7 +40,7 @@
             border-radius: 5px;
         }
 
-        .submit-btn,
+
         .logout-btn {
             width: 100%;
             padding: 10px;
@@ -57,7 +57,8 @@
             background-color: red;
         }
 
-        .update-btn {
+        .update-btn,
+        .submit-btn {
             width: 100%;
             padding: 10px;
             margin-bottom: 10px;
@@ -66,8 +67,38 @@
             color: #fff;
             font-weight: bold;
             cursor: pointer;
-            background-color: #28a745;
+            transition: background-color 0.3s, transform 0.2s; /* Плавная смена цвета и трансформации */
         }
+
+        .update-btn {
+            background-color: #28a745; /* Зеленый цвет кнопки "Обновить" */
+        }
+
+        .submit-btn {
+            background-color: #007bff; /* Синий цвет кнопки "Отправить предложение" */
+        }
+
+        /* Анимация на наведение и нажатие */
+        .update-btn:hover {
+            background-color: #218838; /* Темнее зеленого для эффекта наведения */
+            transform: translateY(-2px); /* Немного поднимается вверх */
+        }
+
+        .submit-btn:hover {
+            background-color: #0056b3; /* Темнее синего для эффекта наведения */
+            transform: translateY(-2px); /* Немного поднимается вверх */
+        }
+
+        .update-btn:active {
+            background-color: #1e7e34; /* Наиболее темный зеленый для эффекта нажатия */
+            transform: translateY(0); /* Возвращается на место */
+        }
+
+        .submit-btn:active {
+            background-color: #004085; /* Наиболее темный синий для эффекта нажатия */
+            transform: translateY(0); /* Возвращается на место */
+        }
+
 
         /* Добавление стилей для контейнера фильтров */
         .filter-container {
@@ -132,8 +163,21 @@
             color: #fff;
             font-weight: bold;
             cursor: pointer;
-            background-color: #6c757d;
+            background-color: #6c757d; /* Изначальный серый цвет кнопки */
+            transition: background-color 0.3s, transform 0.2s; /* Плавная смена цвета и трансформации */
         }
+
+        /* Анимация на наведение и нажатие */
+        .sort-btn:hover {
+            background-color: #5a6268; /* Темнее серого для эффекта наведения */
+            transform: translateY(-2px); /* Немного поднимается вверх */
+        }
+
+        .sort-btn:active {
+            background-color: #495057; /* Наиболее темный серый для эффекта нажатия */
+            transform: translateY(0); /* Возвращается на место */
+        }
+
 
         .menu {
             width: 200px;
@@ -141,34 +185,71 @@
             left: 0;
             top: 0;
             height: 100%;
-            background: #ddd;
+            background: linear-gradient(to bottom, #120A0B, #120A0B); /* Градиент */
             padding: 20px;
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .menu:after {
+            content: "";
+            display: block;
+            background-image: url('/img/Logo.png'); /* Путь к изображению */
+            background-size: 100%; /* Увеличение размера изображения */
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.3; /* Увеличение прозрачности */
+            height: 150%; /* Увеличение высоты изображения */
+            margin-top: auto;
         }
 
         .menu button {
             display: block;
             margin-bottom: 10px;
-            width: 100%;
+            width: 100%; /* Измените, если нужно другое значение */
             padding: 10px;
             color: #fff;
-            background: #6c757d;
+            background: #444; /* Темно-серый для кнопок */
             border: none;
-            text-align: left;
+            text-align: left; /* Левое выравнивание текста внутри кнопки */
             border-radius: 5px;
             font-weight: bold;
             cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s; /* Плавная смена цвета и трансформации */
         }
 
         .menu button.logout-btn {
             background: #dc3545;
         }
 
-        .profile-btn-container { /* Измененное имя класса */
+        .menu button:hover {
+            background-color: #555; /* Более светлый оттенок при наведении */
+            transform: translateY(-2px); /* Преобразование на 2px вверх */
+        }
+
+        .menu button:active {
+            background-color: #333; /* Более тёмный оттенок при клике */
+            transform: scale(0.95); /* Легкое уменьшение размера при клике */
+        }
+
+        .profile-btn-container {
+            z-index: 10;
+            display: flex; /* Flexbox для центрирования */
+            justify-content: center; /* Центрирование кнопки */
             position: absolute;
             bottom: 40px;
-            left: 20px;
+            left: 0; /* Сброс значения со смещения */
+            right: 0; /* Сброс значения со смещения */
+            width: auto; /* Авто ширина для кнопки */
         }
+
+        .profile-btn-container button {
+            width: auto;
+            margin-bottom: 0; /* Убираем нижний отступ */
+        }
+
 
         /* Добавление стилей для контейнера уведомлений */
         .notification {
@@ -233,7 +314,6 @@
     <button onclick="location.href='/theIdeaFactoryIndex'">
         <span th:text="${isAdmin} ? 'Мои идеи (Пользовательская страница)' : 'Мои идеи'"></span>
     </button>
-    <button disabled>Блог</button>
     <div th:if="${isAdmin}">
         <button class="admin-btn" onclick="location.href='/ideasForModeration'">Идеи на модерации</button>
     </div>
@@ -241,12 +321,13 @@
         <button class="admin-btn" onclick="location.href='/theIdeaFactoryIndexAdmin'">Все идеи (Администрирование)
         </button>
     </div>
-    <button class="logout-btn" onclick="location.href='/logout'">Выход</button>
     <div class="profile-btn-container">
         <button onclick="location.href='/profile'" class="profile-btn" style="background-color: #28a745;">Мой профиль
         </button>
     </div>
+    <button class="logout-btn" onclick="location.href='/logout'">Выход</button>
 </div>
+
 
 <div class="container">
     <h2>Фабрика идей</h2>
@@ -342,7 +423,7 @@
                 allEntries = JSON.parse(xhr.responseText);
 
                 // Фильтрация записей по текущему пользователю
-                const userEntries = allEntries.filter(entry => entry.username === currentUser);
+                const userEntries = allEntries.filter(entry => entry.username === currentUser && !entry.anonymous);
 
                 // Сортировка записей от новых к старым по умолчанию
                 sortEntries(userEntries, 'desc');
@@ -558,6 +639,7 @@
         // Функция для отправки формы
         function answerForUser() {
             var form = document.getElementById("ideaForm");
+            const notification = document.getElementById("notification");
 
             // Обработчик события для отправки формы
             form.addEventListener("submit", function (event) {
@@ -572,7 +654,7 @@
                 if (isAnonymous) {
                     thankYouMessage = "Спасибо! Ваше предложение отправлено анонимно!";
                 } else {
-                    thankYouMessage = `Спасибо, ${currentUser}! Ваше предложение отправлено!`; // Используем текущего пользователя
+                    thankYouMessage = `Спасибо, ${currentUser}! Ваше предложение отправлено!`;
                 }
 
                 var formData = new FormData(form);
@@ -582,20 +664,39 @@
                     method: "POST",
                     body: formData,
                 })
-                    .then(response => response.ok ? response.text() : Promise.reject('Ошибка при отправке формы'))
+                    .then(response => {
+                        // Проверяем успешность отправки (200 или 302)
+                        if (response.status === 200 || response.status === 302) {
+                            return response.text();
+                        } else {
+                            return Promise.reject("Ошибка при отправке формы");
+                        }
+                    })
                     .then(result => {
-                        notification.style.display = 'block'; // Показываем контейнер с сообщением
-                        notification.classList.remove('error'); // Удаляем класс ошибки, если он был
-                        notification.textContent = thankYouMessage;
-                        form.reset(); // Сбрасываем форму после отправки
+                        // Сохраняем сообщение благодарности в localStorage
+                        localStorage.setItem('thankYouMessage', thankYouMessage);
+
+                        // Обновляем страницу для отображения нового поста
+                        window.location.reload();
                     })
                     .catch(error => {
-                        console.error('Ошибка:', error);
+                        console.error("Ошибка:", error);
                         notification.style.display = 'block';
-                        notification.classList.add('error'); // Добавляем класс ошибки
+                        notification.classList.add('error');
                         notification.textContent = 'Произошла ошибка при отправке предложения. Попробуйте еще раз.';
                     });
             });
+
+            // Проверяем, есть ли сообщение благодарности в localStorage, и отображаем его
+            const savedMessage = localStorage.getItem('thankYouMessage');
+            if (savedMessage) {
+                notification.style.display = 'block';
+                notification.classList.remove('error');
+                notification.textContent = savedMessage;
+
+                // Удаляем сообщение из localStorage после отображения
+                localStorage.removeItem('thankYouMessage');
+            }
         }
 
         // Инициализируем функцию
@@ -611,7 +712,7 @@
                 const listItem = document.createElement('li');
                 listItem.textContent = tag.name;
                 listItem.dataset.value = tag.name; // Это может быть tag.id, в зависимости от вашей модели
-                listItem.addEventListener('click', function() {
+                listItem.addEventListener('click', function () {
                     toggleTagSelection(tag.name);
                     tagList.style.display = 'none';
                     document.getElementById('tagInput').value = '';
@@ -664,7 +765,7 @@
         });
     }
 
-    document.getElementById('tagInput').addEventListener('input', function() {
+    document.getElementById('tagInput').addEventListener('input', function () {
         const query = this.value.toLowerCase();
         const tagList = document.getElementById('tagSuggestions');
         const tags = Array.from(tagList.children);
@@ -677,7 +778,7 @@
         tagList.style.display = query.length > 0 ? 'block' : 'none';
     });
 
-    document.getElementById('dropdownToggleBtn').addEventListener('click', function(event) {
+    document.getElementById('dropdownToggleBtn').addEventListener('click', function (event) {
         event.preventDefault(); // Останавливаем отправку формы
 
         const tagList = document.getElementById('tagSuggestions');
@@ -690,7 +791,7 @@
         }
     });
 
-    document.getElementById('clearTagsBtn').addEventListener('click', function(event) {
+    document.getElementById('clearTagsBtn').addEventListener('click', function (event) {
         event.preventDefault(); // Останавливаем отправку формы
 
         selectedTags = [];

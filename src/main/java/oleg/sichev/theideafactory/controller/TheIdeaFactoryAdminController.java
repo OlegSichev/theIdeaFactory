@@ -2,12 +2,13 @@ package oleg.sichev.theideafactory.controller;
 
 import jakarta.validation.Valid;
 import oleg.sichev.theideafactory.entity.TheIdeaFactoryEntity;
+import oleg.sichev.theideafactory.entity.User;
 import oleg.sichev.theideafactory.repository.TheIdeaFactoryRepository;
-import oleg.sichev.theideafactory.service.LikeService;
 import oleg.sichev.theideafactory.service.TheIdeaFactoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,9 +33,6 @@ public class TheIdeaFactoryAdminController {
 
     @Autowired
     TheIdeaFactoryRepository theIdeaFactoryRepository;
-
-    @Autowired
-    private LikeService likeService;
 
 
     @GetMapping("/theIdeaFactoryIndexAdmin")
@@ -198,27 +197,15 @@ public class TheIdeaFactoryAdminController {
         return "news";
     }
 
-    @PostMapping("/{entryId}/like")
-    public ResponseEntity<String> likePost(@PathVariable long entryId, @RequestParam Integer userId) {
-        if (likeService.likePost(entryId, userId)) {
-            return ResponseEntity.ok("Post liked");
-        } else {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("User has already liked this post");
-        }
-    }
-
-    @PostMapping("/{id}/comment")
-    public void commentEntry(@PathVariable Long id, @RequestBody String comment) {
-        Optional<TheIdeaFactoryEntity> entityOptional = theIdeaFactoryRepository.findById(id);
-        if (entityOptional.isPresent()) {
-            TheIdeaFactoryEntity entity = entityOptional.get();
-            entity.getComments().add(comment);
-            theIdeaFactoryRepository.save(entity);
-        }
-    }
-
     @GetMapping("/tagReference")
     public String getTagsPage(){
         return "tagReference";
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/likes/{postId}")
+    public List<User> getUsersWhoLikedPost(@PathVariable Long postId) {
+        return new ArrayList<>(theIdeaFactoryRepository.findById(postId).orElseThrow().getUsersWhoLiked());
+    }
+
 }

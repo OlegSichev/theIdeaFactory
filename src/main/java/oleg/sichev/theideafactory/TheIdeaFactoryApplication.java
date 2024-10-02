@@ -2,12 +2,18 @@ package oleg.sichev.theideafactory;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
 @SpringBootApplication
-public class TheIdeaFactoryApplication {
+public class TheIdeaFactoryApplication extends SpringBootServletInitializer {
+
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		return application.sources(TheIdeaFactoryApplication.class);
+	}
 
 	public static void main(String[] args) {
 		SpringApplication.run(TheIdeaFactoryApplication.class, args);
 	}
-
 }

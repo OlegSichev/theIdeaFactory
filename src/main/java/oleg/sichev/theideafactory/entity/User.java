@@ -36,6 +36,12 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(name = "user_likes",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "the_idea_factory_entity_id"))
+    private Set<TheIdeaFactoryEntity> likedIdeas = new HashSet<>();
+
     @ManyToMany(fetch = FetchType.EAGER)
     @Fetch(FetchMode.JOIN)
     @JoinTable(
@@ -44,9 +50,6 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Like> likes = new HashSet<>();
 
     // Геттеры и сеттеры
 
@@ -170,11 +173,11 @@ public class User {
         this.roles = roles;
     }
 
-    public Set<Like> getLikes() {
-        return likes;
+    public Set<TheIdeaFactoryEntity> getLikedIdeas() {
+        return likedIdeas;
     }
 
-    public void setLikes(Set<Like> likes) {
-        this.likes = likes;
+    public void setLikedIdeas(Set<TheIdeaFactoryEntity> likedIdeas) {
+        this.likedIdeas = likedIdeas;
     }
 }

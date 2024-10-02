@@ -16,7 +16,4 @@ public interface TheIdeaFactoryRepository extends JpaRepository<TheIdeaFactoryEn
     List<TheIdeaFactoryEntity> findByIsDeletedTrue();
 
     List<TheIdeaFactoryEntity> findAll();
-
-    @Query("SELECT e FROM TheIdeaFactoryEntity e LEFT JOIN FETCH e.comments")
-    List<TheIdeaFactoryEntity> findAllEntriesWithComments();
 }

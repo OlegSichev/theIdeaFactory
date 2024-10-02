@@ -5,42 +5,44 @@ import oleg.sichev.theideafactory.entity.TheIdeaFactoryEntity;
 import oleg.sichev.theideafactory.entity.User;
 import oleg.sichev.theideafactory.repository.LikeRepository;
 import oleg.sichev.theideafactory.repository.TheIdeaFactoryRepository;
-import oleg.sichev.theideafactory.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class LikeService {
 
     @Autowired
     private LikeRepository likeRepository;
-
     @Autowired
-    private TheIdeaFactoryRepository entryRepository;
+    private TheIdeaFactoryRepository theIdeaFactoryRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    public void toggleLike(User user, TheIdeaFactoryEntity theIdeaFactoryEntity) {
+        Optional<Like> existingLike = likeRepository.findByUserAndTheIdeaFactoryEntity(user, theIdeaFactoryEntity);
 
-    public boolean likePost(long entryId, Integer userId) {
-        Optional<TheIdeaFactoryEntity> entryOptional = entryRepository.findById(entryId);
-        Optional<User> userOptional = userRepository.findById(userId);
-
-        if (entryOptional.isPresent() && userOptional.isPresent()) {
-            TheIdeaFactoryEntity entry = entryOptional.get();
-            User user = userOptional.get();
-
-            if (likeRepository.findByEntryAndUser(entry, user).isPresent()) {
-                // Пользователь уже лайкнул этот пост
-                return false;
-            } else {
-                Like like = new Like();
-                like.setEntry(entry);
-                like.setUser(user);
-                likeRepository.save(like);
-                return true;
-            }
+        if (existingLike.isPresent()) {
+            likeRepository.delete(existingLike.get());
+        } else {
+            Like like = new Like();
+            like.setUser(user);
+            like.setTheIdeaFactoryEntity(theIdeaFactoryEntity);
+            like.setCreatedAt(LocalDateTime.now());
+            likeRepository.save(like);
         }
-        return false;
+    }
+
+    public List<TheIdeaFactoryEntity> getLikedIdeasByUser(User user) {
+        List<Like> likes = likeRepository.findAllByUser(user);
+
+        return likes.stream()
+                .map(Like::getTheIdeaFactoryEntity)
+                .sorted(Comparator.comparing(TheIdeaFactoryEntity::getPostedDate).reversed())
+                .collect(Collectors.toList());
     }
 }

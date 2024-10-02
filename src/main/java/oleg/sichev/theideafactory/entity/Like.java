@@ -1,6 +1,9 @@
 package oleg.sichev.theideafactory.entity;
 
+
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "likes")
@@ -11,14 +14,18 @@ public class Like {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "entry_id", nullable = false)
-    private TheIdeaFactoryEntity entry;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
+    @ManyToOne
+    @JoinColumn(name = "the_idea_factory_entity_id")
+    private TheIdeaFactoryEntity theIdeaFactoryEntity;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
     // Геттеры и сеттеры
+
 
     public Long getId() {
         return id;
@@ -28,14 +35,6 @@ public class Like {
         this.id = id;
     }
 
-    public TheIdeaFactoryEntity getEntry() {
-        return entry;
-    }
-
-    public void setEntry(TheIdeaFactoryEntity entry) {
-        this.entry = entry;
-    }
-
     public User getUser() {
         return user;
     }
@@ -43,4 +42,21 @@ public class Like {
     public void setUser(User user) {
         this.user = user;
     }
+
+    public TheIdeaFactoryEntity getTheIdeaFactoryEntity() {
+        return theIdeaFactoryEntity;
+    }
+
+    public void setTheIdeaFactoryEntity(TheIdeaFactoryEntity theIdeaFactoryEntity) {
+        this.theIdeaFactoryEntity = theIdeaFactoryEntity;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }
+
